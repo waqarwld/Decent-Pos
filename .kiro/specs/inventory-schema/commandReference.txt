@@ -1,0 +1,103 @@
+I can help you create a reference document with PostgreSQL commands for your Docker container. Let me check your docker-compose configuration first to understand your setup.
+
+Based on your Docker setup, here's a comprehensive list of commands you can run with your PostgreSQL container:
+
+## Docker Container Management
+
+```bash
+# Start the container
+docker-compose -f Docker/docker-compose.yml up -d
+
+# Stop the container
+docker-compose -f Docker/docker-compose.yml down
+
+# View container logs
+docker-compose -f Docker/docker-compose.yml logs -f postgres
+
+# Check container status
+docker-compose -f Docker/docker-compose.yml ps
+```
+
+## PostgreSQL Access Commands
+
+```bash
+# Connect to PostgreSQL using psql (interactive shell)
+docker exec -it inventory_postgres psql -U inventory_user -d inventory_management
+
+# Run a single SQL command
+docker exec -it inventory_postgres psql -U inventory_user -d inventory_management -c "SELECT version();"
+
+# Execute a SQL file from your host machine
+docker exec -i inventory_postgres psql -U inventory_user -d inventory_management < schema.sql
+
+# Execute a SQL file that's already in the container
+docker exec -it inventory_postgres psql -U inventory_user -d inventory_management -f /path/to/file.sql
+```
+
+## Database Operations
+
+```bash
+# List all databases
+docker exec -it inventory_postgres psql -U inventory_user -c "\l"
+
+# List all tables in the current database
+docker exec -it inventory_postgres psql -U inventory_user -d inventory_management -c "\dt"
+
+# Describe a specific table
+docker exec -it inventory_postgres psql -U inventory_user -d inventory_management -c "\d products"
+
+# List all functions/procedures
+docker exec -it inventory_postgres psql -U inventory_user -d inventory_management -c "\df"
+
+# Run your test files
+docker exec -i inventory_postgres psql -U inventory_user -d inventory_management < test_database_functions.sql
+docker exec -i inventory_postgres psql -U inventory_user -d inventory_management < test_inventory_procedures.sql
+docker exec -i inventory_postgres psql -U inventory_user -d inventory_management < test_inventory_reporting.sql
+```
+
+## Backup and Restore
+
+```bash
+# Create a database backup
+docker exec inventory_postgres pg_dump -U inventory_user inventory_management > backup.sql
+
+# Restore from backup
+docker exec -i inventory_postgres psql -U inventory_user -d inventory_management < backup.sql
+
+# Backup with custom format (compressed)
+docker exec inventory_postgres pg_dump -U inventory_user -Fc inventory_management > backup.dump
+
+# Restore from custom format
+docker exec -i inventory_postgres pg_restore -U inventory_user -d inventory_management < backup.dump
+```
+
+## Maintenance Commands
+
+```bash
+# Check database size
+docker exec -it inventory_postgres psql -U inventory_user -d inventory_management -c "SELECT pg_size_pretty(pg_database_size('inventory_management'));"
+
+# Vacuum analyze (optimize database)
+docker exec -it inventory_postgres psql -U inventory_user -d inventory_management -c "VACUUM ANALYZE;"
+
+# Check active connections
+docker exec -it inventory_postgres psql -U inventory_user -d inventory_management -c "SELECT * FROM pg_stat_activity;"
+```
+
+## Container Shell Access
+
+```bash
+# Access container bash shell
+docker exec -it inventory_postgres /bin/sh
+
+# Once inside, you can use psql directly
+psql -U inventory_user -d inventory_management
+```
+
+All commands use your configured credentials:
+- Container: `inventory_postgres`
+- Database: `inventory_management`
+- User: `inventory_user`
+- Password: `inventory_pass` (automatically used inside container)
+
+Would you like me to create a dedicated reference document with these commands, or would you like to see commands for specific operations?

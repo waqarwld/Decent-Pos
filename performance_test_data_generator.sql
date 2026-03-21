@@ -1,0 +1,11 @@
+-- ============================================================================
+-- PERFORMANCE TEST DATA GENERATOR
+-- ============================================================================
+-- This script generates large datasets for performance testing the inventory
+-- management system. It creates realistic data volumes to test scalability
+-- and query performance under load.
+--
+-- Data volumes generated:
+-- - 100,000 products across various categories
+-- - 500 locations with hierarchical structure
+-
