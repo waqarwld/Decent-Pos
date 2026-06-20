@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+dist
+build
+.git
+.gitignore
+.angular
+.vscode
+.kimchi
+.editorconfig
+*.log
+.DS_Store

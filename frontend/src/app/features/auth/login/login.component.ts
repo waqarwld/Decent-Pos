@@ -9,15 +9,25 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-gray-100">
-      <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Sign In</h1>
+    <div class="min-h-screen flex items-center justify-center bg-pos-bg relative overflow-hidden">
+      <!-- Subtle radial glow behind card -->
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,212,255,0.08)_0%,_transparent_70%)] pointer-events-none"></div>
 
-        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+      <div class="relative z-10 bg-pos-surface border border-pos-surface-light rounded-2xl shadow-2xl p-10 w-full max-w-md mx-4">
+        <!-- Logo / Title -->
+        <div class="text-center mb-8">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-xl bg-pos-accent/10 flex items-center justify-center">
+            <span class="text-3xl">📦</span>
+          </div>
+          <h1 class="text-3xl font-bold text-pos-text tracking-tight">Inventory POS</h1>
+          <p class="text-pos-text-muted text-sm mt-2">Sign in to continue</p>
+        </div>
+
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate class="space-y-5">
 
           <!-- Username -->
-          <div class="mb-4">
-            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+          <div>
+            <label for="username" class="block text-sm font-medium text-pos-text-muted mb-2">
               Username
             </label>
             <input
@@ -25,20 +35,21 @@ import { AuthService } from '../../../core/services/auth.service';
               type="text"
               formControlName="username"
               autocomplete="username"
-              class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              placeholder="Enter username"
+              class="w-full px-4 py-3.5 bg-pos-surface-light border border-pos-surface-light rounded-xl text-pos-text text-base placeholder-pos-text-muted/50 focus:outline-none focus:ring-2 focus:ring-pos-accent focus:border-pos-accent transition"
               [ngClass]="{
-                'border-red-400': usernameInvalid,
-                'border-gray-300': !usernameInvalid
+                'border-pos-danger': usernameInvalid,
+                'border-pos-surface-light': !usernameInvalid
               }"
             />
             @if (usernameInvalid) {
-              <p class="mt-1 text-xs text-red-500">Username is required.</p>
+              <p class="mt-2 text-sm text-pos-danger">Username is required.</p>
             }
           </div>
 
           <!-- Password -->
-          <div class="mb-6">
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+          <div>
+            <label for="password" class="block text-sm font-medium text-pos-text-muted mb-2">
               Password
             </label>
             <input
@@ -46,20 +57,21 @@ import { AuthService } from '../../../core/services/auth.service';
               type="password"
               formControlName="password"
               autocomplete="current-password"
-              class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              placeholder="Enter password"
+              class="w-full px-4 py-3.5 bg-pos-surface-light border border-pos-surface-light rounded-xl text-pos-text text-base placeholder-pos-text-muted/50 focus:outline-none focus:ring-2 focus:ring-pos-accent focus:border-pos-accent transition"
               [ngClass]="{
-                'border-red-400': passwordInvalid,
-                'border-gray-300': !passwordInvalid
+                'border-pos-danger': passwordInvalid,
+                'border-pos-surface-light': !passwordInvalid
               }"
             />
             @if (passwordInvalid) {
-              <p class="mt-1 text-xs text-red-500">Password is required.</p>
+              <p class="mt-2 text-sm text-pos-danger">Password is required.</p>
             }
           </div>
 
           <!-- Error message -->
           @if (errorMessage()) {
-            <div class="mb-4 px-3 py-2 bg-red-50 border border-red-300 rounded-lg text-sm text-red-600" role="alert">
+            <div class="px-4 py-3 bg-pos-danger/10 border border-pos-danger/30 rounded-xl text-sm text-pos-danger text-center" role="alert">
               {{ errorMessage() }}
             </div>
           }
@@ -68,10 +80,13 @@ import { AuthService } from '../../../core/services/auth.service';
           <button
             type="submit"
             [disabled]="loading()"
-            class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-lg text-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            class="w-full py-4 px-6 bg-pos-accent hover:bg-pos-accent-hover disabled:bg-pos-accent/40 text-pos-bg font-bold rounded-xl text-base transition focus:outline-none focus:ring-2 focus:ring-pos-accent focus:ring-offset-2 focus:ring-offset-pos-surface"
           >
             @if (loading()) {
-              <span>Signing in…</span>
+              <span class="flex items-center justify-center gap-2">
+                <span class="w-5 h-5 border-2 border-pos-bg/30 border-t-pos-bg rounded-full animate-spin"></span>
+                Signing in…
+              </span>
             } @else {
               <span>Sign In</span>
             }

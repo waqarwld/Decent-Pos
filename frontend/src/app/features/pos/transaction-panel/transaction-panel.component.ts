@@ -1,52 +1,65 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, Output, EventEmitter } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { TransactionService } from '../../../core/services/transaction.service';
 import { TransactionItemComponent } from '../transaction-item/transaction-item.component';
+import { Product } from '../../../core/models/product';
 
 @Component({
   selector: 'app-transaction-panel',
   standalone: true,
   imports: [CommonModule, CurrencyPipe, TransactionItemComponent],
   template: `
-    <div class="flex flex-col h-full bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
-
+    <div class="h-full flex flex-col bg-pos-surface border-l border-pos-surface-light">
       <!-- Header -->
-      <div class="px-4 py-3 bg-white border-b border-gray-200">
-        <h2 class="text-base font-semibold text-gray-800">Current Transaction</h2>
+      <div class="px-4 py-3 bg-pos-surface-light border-b border-pos-surface-light flex items-center justify-between">
+        <h2 class="text-base font-semibold text-pos-text">
+          Cart
+          @if (transactionService.items().length > 0) {
+            <span class="ml-2 text-xs bg-pos-accent text-pos-bg px-2 py-0.5 rounded-full">
+              {{ transactionService.items().length }}
+            </span>
+          }
+        </h2>
+        <button
+          type="button"
+          (click)="onClearCart()"
+          [disabled]="transactionService.items().length === 0"
+          class="text-xs text-pos-danger hover:text-pos-danger/80 disabled:text-pos-text-muted/30 transition"
+        >
+          Clear
+        </button>
       </div>
 
-      <!-- Items list -->
-      <div class="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-        @if (transactionService.items().length === 0) {
-          <p class="text-sm text-gray-400 text-center py-8">No items added yet.</p>
-        } @else {
+      <!-- Empty State -->
+      @if (transactionService.items().length === 0) {
+        <div class="flex-1 flex flex-col items-center justify-center text-center px-6">
+          <span class="text-5xl mb-4 opacity-20">🛒</span>
+          <p class="text-pos-text-muted text-sm">Cart is empty</p>
+          <p class="text-pos-text-muted/60 text-xs mt-1">Tap a product to add it</p>
+        </div>
+      } @else {
+        <!-- Items list -->
+        <div class="flex-1 overflow-y-auto p-3 space-y-2">
           @for (item of transactionService.items(); track item.product.id) {
             <app-transaction-item
               [item]="item"
-              (increment)="onIncrement($event)"
-              (decrement)="onDecrement($event)"
-              (remove)="onRemove($event)"
+              (increment)="transactionService.increment($event)"
+              (decrement)="transactionService.decrement($event)"
+              (remove)="transactionService.remove($event)"
+              (editQty)="onEditQuantity(item.product, item.quantity)"
             />
           }
-        }
-      </div>
-
-      <!-- Footer: total + submit -->
-      <div class="px-4 py-4 bg-white border-t border-gray-200 space-y-3">
-
-        <!-- Running total -->
-        <div class="flex items-center justify-between">
-          <span class="text-sm font-medium text-gray-600">Total</span>
-          <span class="text-lg font-bold text-gray-900">
-            {{ transactionService.total() | currency }}
-          </span>
         </div>
+      }
+
+      <!-- Footer: Total + Actions -->
+      <div class="px-4 py-4 bg-pos-surface-light border-t border-pos-surface-light space-y-4">
 
         <!-- Error message -->
         @if (transactionService.error()) {
           <div
             role="alert"
-            class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 border border-red-200"
+            class="rounded-lg bg-pos-danger/10 px-3 py-2.5 text-sm text-pos-danger border border-pos-danger/20"
           >
             {{ transactionService.error() }}
           </div>
@@ -56,28 +69,33 @@ import { TransactionItemComponent } from '../transaction-item/transaction-item.c
         @if (successMessage()) {
           <div
             role="status"
-            class="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 border border-green-200"
+            class="rounded-lg bg-pos-success/10 px-3 py-2.5 text-sm text-pos-success border border-pos-success/20"
           >
             {{ successMessage() }}
           </div>
         }
 
-        <!-- Complete Transaction button -->
+        <!-- Totals -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-pos-text-muted">Subtotal</span>
+            <span class="text-sm text-pos-text">{{ transactionService.total() | currency }}</span>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-pos-surface-light">
+            <span class="text-lg font-semibold text-pos-text">Total</span>
+            <span class="text-2xl font-bold text-pos-accent">{{ transactionService.total() | currency }}</span>
+          </div>
+        </div>
+
+        <!-- Pay Button -->
         <button
           type="button"
-          (click)="onCompleteTransaction()"
-          [disabled]="transactionService.items().length === 0 || submitting()"
-          class="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white
-                 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500
-                 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+          (click)="onPay()"
+          [disabled]="transactionService.items().length === 0"
+          class="w-full rounded-xl bg-pos-accent px-4 py-4 text-lg font-bold text-pos-bg hover:bg-pos-accent-hover focus:outline-none focus:ring-2 focus:ring-pos-accent disabled:bg-pos-accent/30 disabled:cursor-not-allowed transition"
         >
-          @if (submitting()) {
-            Processing…
-          } @else {
-            Complete Transaction
-          }
+          Pay Now
         </button>
-
       </div>
     </div>
   `,
@@ -85,46 +103,25 @@ import { TransactionItemComponent } from '../transaction-item/transaction-item.c
 export class TransactionPanelComponent {
   protected readonly transactionService = inject(TransactionService);
 
-  protected readonly submitting = signal(false);
-  protected readonly successMessage = signal<string | null>(null);
+  @Output() showNumpad = new EventEmitter<{ product: Product; currentQty: number }>();
+  @Output() showPayment = new EventEmitter<void>();
 
-  /**
-   * Default location ID used when submitting.
-   * In a real app this would come from a store/location selector.
-   * Using 1 as a sensible default for the POS shell.
-   */
-  private readonly defaultLocationId = 1;
+  readonly successMessage = signal<string | null>(null);
 
-  onIncrement(productId: number): void {
-    this.transactionService.increment(productId);
+  onEditQuantity(product: Product, currentQty: number): void {
+    this.showNumpad.emit({ product, currentQty });
   }
 
-  onDecrement(productId: number): void {
-    this.transactionService.decrement(productId);
-  }
-
-  onRemove(productId: number): void {
-    this.transactionService.remove(productId);
-  }
-
-  onCompleteTransaction(): void {
-    if (this.transactionService.items().length === 0 || this.submitting()) {
-      return;
+  onClearCart(): void {
+    if (this.transactionService.items().length === 0) return;
+    if (confirm('Clear all items from cart?')) {
+      this.transactionService.clear();
+      this.successMessage.set(null);
     }
+  }
 
-    this.submitting.set(true);
-    this.successMessage.set(null);
-
-    this.transactionService.submit(this.defaultLocationId).subscribe({
-      next: () => {
-        this.transactionService.clear();
-        this.successMessage.set('Transaction completed successfully.');
-        this.submitting.set(false);
-      },
-      error: () => {
-        // Error is already surfaced via transactionService.error signal
-        this.submitting.set(false);
-      },
-    });
+  onPay(): void {
+    if (this.transactionService.items().length === 0) return;
+    this.showPayment.emit();
   }
 }

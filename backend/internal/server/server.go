@@ -105,6 +105,11 @@ func (s *Server) registerRoutes() {
 	reportSvc := services.NewReportService(reportRepo)
 	reportH := handlers.NewReportHandler(reportSvc)
 
+	authH := handlers.NewAuthHandler(s.cfg.JWTSecret)
+
+	// Unprotected API routes (login must be accessible without a token)
+	r.Post("/api/v1/auth/login", authH.Login)
+
 	// Protected API group — all routes require a valid JWT
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.NewAuthMiddleware(s.cfg.JWTSecret))

@@ -8,12 +8,14 @@ import { SidebarNavComponent } from '../../../shared/components/sidebar-nav/side
   standalone: true,
   imports: [RouterOutlet, TopNavComponent, SidebarNavComponent],
   template: `
-    <app-top-nav />
-    <div class="flex">
-      <app-sidebar-nav />
-      <main class="flex-1 p-4">
-        <router-outlet />
-      </main>
+    <div class="h-screen flex flex-col bg-admin-bg">
+      <app-top-nav />
+      <div class="flex-1 flex overflow-hidden">
+        <app-sidebar-nav />
+        <main class="flex-1 overflow-auto p-6">
+          <router-outlet />
+        </main>
+      </div>
     </div>
   `,
 })

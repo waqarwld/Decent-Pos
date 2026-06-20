@@ -11,37 +11,51 @@ import { ApiHealthService } from '../../../core/services/api-health.service';
     @if (authService.isAuthenticated()) {
       <!-- Connectivity warning banner -->
       @if (!apiHealthService.isConnected()) {
-        <div class="bg-yellow-400 text-yellow-900 text-sm font-medium px-4 py-2 text-center" role="alert">
+        <div class="bg-pos-warning/10 text-pos-warning text-sm font-medium px-4 py-2 text-center border-b border-pos-warning/20" role="alert">
           ⚠ Unable to reach the server. Please check your connection.
         </div>
       }
 
       <!-- Navigation bar -->
-      <nav class="bg-gray-800 text-white px-4 py-3 flex items-center justify-between">
+      <nav class="bg-admin-sidebar text-white px-4 py-2.5 flex items-center justify-between h-14">
         <div class="flex items-center gap-6">
-          <span class="font-bold text-lg tracking-tight">POS System</span>
-          <a
-            routerLink="/pos"
-            routerLinkActive="text-white font-semibold underline"
-            [routerLinkActiveOptions]="{ exact: true }"
-            class="text-gray-300 hover:text-white transition-colors"
-          >
-            POS
+          <!-- Logo -->
+          <a routerLink="/pos" class="flex items-center gap-2 font-bold text-lg tracking-tight hover:opacity-90 transition">
+            <span class="text-xl">📦</span>
+            <span class="hidden md:block">Inventory POS</span>
           </a>
-          <a
-            routerLink="/admin"
-            routerLinkActive="text-white font-semibold underline"
-            class="text-gray-300 hover:text-white transition-colors"
-          >
-            Admin
-          </a>
+
+          <!-- Nav Links -->
+          <div class="hidden sm:flex items-center gap-1">
+            <a
+              routerLink="/pos"
+              routerLinkActive="bg-white/10 text-white"
+              class="text-white/70 hover:text-white hover:bg-white/5 px-3 py-1.5 rounded-lg text-sm font-medium transition"
+            >
+              POS
+            </a>
+            <a
+              routerLink="/admin"
+              routerLinkActive="bg-white/10 text-white"
+              class="text-white/70 hover:text-white hover:bg-white/5 px-3 py-1.5 rounded-lg text-sm font-medium transition"
+            >
+              Admin
+            </a>
+          </div>
         </div>
-        <button
-          (click)="authService.logout()"
-          class="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1.5 rounded transition-colors"
-        >
-          Logout
-        </button>
+
+        <!-- Right side -->
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-white/50 hidden lg:block">
+            {{ authService.getToken() ? 'Logged in' : 'Session expired' }}
+          </span>
+          <button
+            (click)="authService.logout()"
+            class="bg-white/10 hover:bg-white/20 text-white text-sm px-4 py-2 rounded-lg font-medium transition"
+          >
+            Logout
+          </button>
+        </div>
       </nav>
     }
   `,
