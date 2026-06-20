@@ -3,9 +3,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { of, throwError } from 'rxjs';
 
 // Mock Angular's inject() so we can test without a full TestBed
-vi.mock('@angular/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@angular/core')>();
-  return { ...actual, inject: vi.fn() };
+const { mockInject } = vi.hoisted(() => ({ mockInject: vi.fn() }));
+
+vi.mock('@angular/core', async () => {
+  const actual = await vi.importActual<typeof import('@angular/core')>('@angular/core');
+  return { ...actual, inject: mockInject };
 });
 
 import { inject } from '@angular/core';
@@ -27,7 +29,7 @@ function makeRouter() {
 
 function buildService(httpClient: ReturnType<typeof makeHttpClient>, router: ReturnType<typeof makeRouter>) {
   // inject() is called twice inside AuthService constructor: http then router
-  vi.mocked(inject)
+  mockInject
     .mockReturnValueOnce(httpClient as any)
     .mockReturnValueOnce(router as any);
   return new AuthService();
@@ -40,7 +42,7 @@ function buildService(httpClient: ReturnType<typeof makeHttpClient>, router: Ret
 describe('AuthService', () => {
   beforeEach(() => {
     sessionStorage.clear();
-    vi.mocked(inject).mockReset();
+    mockInject.mockReset();
   });
 
   afterEach(() => {

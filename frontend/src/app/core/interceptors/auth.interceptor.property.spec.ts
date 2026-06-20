@@ -10,9 +10,11 @@ import { HttpRequest, HttpResponse, HttpHandlerFn, HttpErrorResponse } from '@an
 // We test the interceptor logic directly by mocking Angular's inject()
 // so we can run these tests without a full Angular TestBed setup.
 
-vi.mock('@angular/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@angular/core')>();
-  return { ...actual, inject: vi.fn() };
+const { mockInject } = vi.hoisted(() => ({ mockInject: vi.fn() }));
+
+vi.mock('@angular/core', async () => {
+  const actual = await vi.importActual<typeof import('@angular/core')>('@angular/core');
+  return { ...actual, inject: mockInject };
 });
 
 import { inject } from '@angular/core';
@@ -35,7 +37,7 @@ describe('AuthInterceptor — Property 2: JWT attached to all /api/v1/* requests
   }
 
   beforeEach(() => {
-    vi.mocked(inject).mockReset();
+    mockInject.mockReset();
     mockLogout.mockReset();
   });
 
@@ -46,7 +48,7 @@ describe('AuthInterceptor — Property 2: JWT attached to all /api/v1/* requests
         fc.string({ minLength: 1, maxLength: 64 }),
         (suffix, token) => {
           const url = `http://localhost:8080/api/v1/${suffix}`;
-          vi.mocked(inject).mockReturnValue(makeAuthService(token) as any);
+          mockInject.mockReturnValue(makeAuthService(token) as any);
 
           const captured: { value: HttpRequest<unknown> | null } = { value: null };
           const req = new HttpRequest('GET', url);
@@ -76,7 +78,7 @@ describe('AuthInterceptor — Property 2: JWT attached to all /api/v1/* requests
         (url, token) => {
           fc.pre(!url.includes('/api/v1/'));
 
-          vi.mocked(inject).mockReturnValue(makeAuthService(token) as any);
+          mockInject.mockReturnValue(makeAuthService(token) as any);
 
           const captured: { value: HttpRequest<unknown> | null } = { value: null };
           const req = new HttpRequest('GET', url);
@@ -98,7 +100,7 @@ describe('AuthInterceptor — Property 2: JWT attached to all /api/v1/* requests
         fc.string({ minLength: 0, maxLength: 50 }),
         (suffix) => {
           const url = `http://localhost:8080/api/v1/${suffix}`;
-          vi.mocked(inject).mockReturnValue(makeAuthService(null) as any);
+          mockInject.mockReturnValue(makeAuthService(null) as any);
 
           const captured: { value: HttpRequest<unknown> | null } = { value: null };
           const req = new HttpRequest('GET', url);
@@ -144,7 +146,7 @@ describe('AuthInterceptor — Property 3: 401 response clears token and redirect
   }
 
   beforeEach(() => {
-    vi.mocked(inject).mockReset();
+    mockInject.mockReset();
     mockLogout.mockReset();
     mockNavigate.mockReset();
   });
@@ -155,7 +157,7 @@ describe('AuthInterceptor — Property 3: 401 response clears token and redirect
         fc.string({ minLength: 1, maxLength: 80 }).map((s) => `http://localhost/${s.replace(/\s/g, '-')}`),
         fc.option(fc.string({ minLength: 1, maxLength: 64 }), { nil: null }),
         (url, token) => {
-          vi.mocked(inject).mockReturnValue(makeAuthService(token) as any);
+          mockInject.mockReturnValue(makeAuthService(token) as any);
           mockLogout.mockReset();
 
           const req = new HttpRequest('GET', url);
@@ -184,7 +186,7 @@ describe('AuthInterceptor — Property 3: 401 response clears token and redirect
         fc.string({ minLength: 1, maxLength: 80 }).map((s) => `http://localhost/${s.replace(/\s/g, '-')}`),
         fc.option(fc.string({ minLength: 1, maxLength: 64 }), { nil: null }),
         (status, url, token) => {
-          vi.mocked(inject).mockReturnValue(makeAuthService(token) as any);
+          mockInject.mockReturnValue(makeAuthService(token) as any);
           mockLogout.mockReset();
 
           const req = new HttpRequest('GET', url);
@@ -206,7 +208,7 @@ describe('AuthInterceptor — Property 3: 401 response clears token and redirect
         fc.string({ minLength: 1, maxLength: 80 }).map((s) => `http://localhost/${s.replace(/\s/g, '-')}`),
         fc.option(fc.string({ minLength: 1, maxLength: 64 }), { nil: null }),
         (url, token) => {
-          vi.mocked(inject).mockReturnValue(makeAuthService(token) as any);
+          mockInject.mockReturnValue(makeAuthService(token) as any);
           mockLogout.mockReset();
 
           const req = new HttpRequest('GET', url);
