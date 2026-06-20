@@ -13,7 +13,10 @@ services:
       - ../schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
       - ../inventory_procedures.sql:/docker-entrypoint-initdb.d/02-procedures.sql
       - ../inventory_reporting.sql:/docker-entrypoint-initdb.d/03-reporting.sql
-      - ../load_sample_data.sql:/docker-entrypoint-initdb.d/04-data.sql
+      - ../fix_trigger.sql:/docker-entrypoint-initdb.d/04-fix-trigger.sql
+      - ../load_sample_data.sql:/docker-entrypoint-initdb.d/05-data.sql
+      - ../sample_data.sql:/sample_data.sql
+      - ../sample_data_movements.sql:/sample_data_movements.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U inventory_user -d inventory_management"]
       interval: 10s

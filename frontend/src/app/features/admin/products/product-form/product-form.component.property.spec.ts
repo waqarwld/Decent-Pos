@@ -122,7 +122,7 @@ describe('ProductFormComponent — Property 10a: Form invalid when any required 
         (invalidSku, validName, validPrice) => {
           const { component } = createComponent();
 
-          component.form.setValue({
+          component.form.patchValue({
             sku: invalidSku,
             name: validName,
             price: validPrice,
@@ -146,7 +146,7 @@ describe('ProductFormComponent — Property 10a: Form invalid when any required 
         (validSku, invalidName, validPrice) => {
           const { component } = createComponent();
 
-          component.form.setValue({
+          component.form.patchValue({
             sku: validSku,
             name: invalidName,
             price: validPrice,
@@ -169,7 +169,7 @@ describe('ProductFormComponent — Property 10a: Form invalid when any required 
         (validSku, validName) => {
           const { component } = createComponent();
 
-          component.form.setValue({
+          component.form.patchValue({
             sku: validSku,
             name: validName,
             price: null,
@@ -206,7 +206,7 @@ describe('ProductFormComponent — Property 10b: onSubmit() does not call create
         (invalidSku, validName, validPrice) => {
           const { component, mockProductService } = createComponent();
 
-          component.form.setValue({
+          component.form.patchValue({
             sku: invalidSku,
             name: validName,
             price: validPrice,
@@ -233,7 +233,7 @@ describe('ProductFormComponent — Property 10b: onSubmit() does not call create
         (validSku, invalidName, validPrice) => {
           const { component, mockProductService } = createComponent();
 
-          component.form.setValue({
+          component.form.patchValue({
             sku: validSku,
             name: invalidName,
             price: validPrice,
@@ -259,7 +259,7 @@ describe('ProductFormComponent — Property 10b: onSubmit() does not call create
         (validSku, validName) => {
           const { component, mockProductService } = createComponent();
 
-          component.form.setValue({
+          component.form.patchValue({
             sku: validSku,
             name: validName,
             price: null,
@@ -285,7 +285,7 @@ describe('ProductFormComponent — Property 10b: onSubmit() does not call create
         (invalidSku, invalidName) => {
           const { component, mockProductService } = createComponent();
 
-          component.form.setValue({
+          component.form.patchValue({
             sku: invalidSku,
             name: invalidName,
             price: null,
@@ -325,7 +325,7 @@ describe('ProductFormComponent — Property 10c: Form valid and create called wh
         (validSku, validName, validPrice) => {
           const { component, mockProductService } = createComponent();
 
-          component.form.setValue({
+          component.form.patchValue({
             sku: validSku,
             name: validName,
             price: validPrice,
@@ -456,7 +456,7 @@ describe('ProductFormComponent — Property 11a: Create mode dispatches POST to 
         ({ sku, name, price }) => {
           const { component, mockProductService } = buildCreateModeMocks();
 
-          component.form.setValue({
+          component.form.patchValue({
             sku,
             name,
             price,
@@ -477,7 +477,7 @@ describe('ProductFormComponent — Property 11a: Create mode dispatches POST to 
           const [payload] = mockProductService.create.mock.calls[0];
           expect(payload.sku).toBe(sku.trim());
           expect(payload.name).toBe(name.trim());
-          expect(payload.price).toBe(price);
+          expect(payload.selling_price).toBe(price);
         }
       ),
       { numRuns: 100 }
@@ -502,7 +502,7 @@ describe('ProductFormComponent — Property 11b: Edit mode dispatches PUT to /ap
         (id, { sku, name, price }) => {
           const { component, mockProductService } = buildEditModeMocks(id);
 
-          component.form.setValue({
+          component.form.patchValue({
             sku,
             name,
             price,
@@ -524,7 +524,7 @@ describe('ProductFormComponent — Property 11b: Edit mode dispatches PUT to /ap
           expect(calledId).toBe(id);
           expect(payload.sku).toBe(sku.trim());
           expect(payload.name).toBe(name.trim());
-          expect(payload.price).toBe(price);
+          expect(payload.selling_price).toBe(price);
         }
       ),
       { numRuns: 100 }
