@@ -5,8 +5,22 @@ export interface Location {
 }
 
 export interface LocationCreateRequest {
+  code: string;
   name: string;
   description?: string;
+  location_type?: string;
+  parent_location_id?: number;
+  capacity?: number;
+  is_active?: boolean;
+}
+
+export interface Product {
+  sku: string;
+  name: string;
+  description?: string;
+  category_id?: number;
+  unit_of_measure: string;
+  price?: number;
 }
 
 export interface Supplier {
@@ -16,8 +30,14 @@ export interface Supplier {
 }
 
 export interface SupplierCreateRequest {
+  code: string;
   name: string;
   contact_info?: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  payment_terms?: string;
+  is_active?: boolean;
 }
 
 export interface InventoryMovement {

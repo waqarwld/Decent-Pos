@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
+import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Category, CategoryCreateRequest } from '../models/product';
+import { Category, CategoryCreateRequest, PaginatedResponse } from '../models/product';
 import { ApiError } from '../models/auth';
 
 @Injectable({ providedIn: 'root' })
@@ -16,8 +16,11 @@ export class CategoryService {
    */
   getAll(): Observable<Category[]> {
     return this.http
-      .get<Category[]>(this.base)
-      .pipe(catchError(this.handleError));
+      .get<PaginatedResponse<Category>>(this.base)
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError),
+      );
   }
 
   /**

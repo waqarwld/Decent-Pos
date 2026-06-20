@@ -21,6 +21,7 @@ export interface Product {
   name: string;
   description?: string;
   price: number;
+  unit_of_measure?: string;
   category_id?: number;
   category?: Category;
   stock?: StockInfo[];
@@ -32,16 +33,24 @@ export interface ProductCreateRequest {
   sku: string;
   name: string;
   description?: string;
-  price: number;
+  unit_of_measure: string;
+  cost_price?: number;
+  selling_price?: number;
   category_id?: number;
+  status?: string;
+  weight_kg?: number;
 }
 
 export interface ProductUpdateRequest {
   sku?: string;
   name?: string;
   description?: string;
-  price?: number;
+  unit_of_measure?: string;
+  cost_price?: number;
+  selling_price?: number;
   category_id?: number;
+  status?: string;
+  weight_kg?: number;
 }
 
 export interface PaginatedResponse<T> {

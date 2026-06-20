@@ -63,6 +63,23 @@ import { Category } from '../../../../core/models/product';
             }
           </div>
 
+          <!-- Unit of Measure -->
+          <div>
+            <label for="unit_of_measure" class="block text-sm font-medium text-gray-700 mb-1">
+              Unit of Measure <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="unit_of_measure"
+              formControlName="unit_of_measure"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white"
+            >
+              <option value="each">Each</option>
+              <option value="kg">Kilogram</option>
+              <option value="litre">Litre</option>
+              <option value="pack">Pack</option>
+            </select>
+          </div>
+
           <!-- Name -->
           <div>
             <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
@@ -204,6 +221,7 @@ export class ProductFormComponent implements OnInit {
   readonly form = this.fb.group({
     sku: ['', [Validators.required]],
     name: ['', [Validators.required]],
+    unit_of_measure: ['each', [Validators.required]],
     price: [null as number | null, [Validators.required, Validators.min(0)]],
     description: [''],
     category_id: [null as number | null],
@@ -265,6 +283,7 @@ export class ProductFormComponent implements OnInit {
         this.form.patchValue({
           sku: product.sku,
           name: product.name,
+          unit_of_measure: product.unit_of_measure ?? 'each',
           price: product.price,
           description: product.description ?? '',
           category_id: product.category_id ?? null,
@@ -294,7 +313,8 @@ export class ProductFormComponent implements OnInit {
     const payload = {
       sku: raw.sku!.trim(),
       name: raw.name!.trim(),
-      price: raw.price!,
+      unit_of_measure: raw.unit_of_measure!.trim(),
+      selling_price: raw.price!,
       description: raw.description?.trim() || undefined,
       category_id: raw.category_id ?? undefined,
     };

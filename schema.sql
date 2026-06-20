@@ -142,8 +142,8 @@ CREATE TABLE product_suppliers (
     
     -- Performance tracking fields
     average_delivery_days DECIMAL(5,2),
-    on_time_delivery_rate DECIMAL(5,4), -- Percentage as decimal (0.95 = 95%)
-    quality_rating DECIMAL(3,2), -- Rating out of 5.00
+    on_time_delivery_rate DECIMAL(5,4),
+    quality_rating DECIMAL(3,2),
     total_orders INTEGER DEFAULT 0,
     total_delivered INTEGER DEFAULT 0,
     last_order_date DATE,
@@ -221,10 +221,7 @@ COMMENT ON COLUMN products.sku IS 'Stock Keeping Unit - unique product identifie
 COMMENT ON COLUMN products.status IS 'Product lifecycle status: active, discontinued, pending';
 COMMENT ON COLUMN locations.location_type IS 'Type of location: warehouse, zone, aisle, bin, etc.';
 COMMENT ON COLUMN locations.parent_location_id IS 'Self-reference for hierarchical location structure';
-COMMENT ON COLUMN suppliers.payment_terms IS 'Payment terms and conditions for this supplier';$'
- 
-   )
-);
+COMMENT ON COLUMN suppliers.payment_terms IS 'Payment terms and conditions for this supplier';
 
 -- =============================================================================
 -- STOCK MANAGEMENT TABLES
@@ -321,7 +318,7 @@ CREATE INDEX idx_reorder_settings_active ON reorder_settings(is_active) WHERE is
 
 -- Function to update stock levels from inventory movements
 CREATE OR REPLACE FUNCTION update_stock_levels()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
     -- Get the quantity adjustment based on movement type
     DECLARE
@@ -343,7 +340,7 @@ BEGIN
         RETURN NEW;
     END;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Trigger to automatically update stock levels when movements are inserted
 CREATE TRIGGER trigger_update_stock_levels

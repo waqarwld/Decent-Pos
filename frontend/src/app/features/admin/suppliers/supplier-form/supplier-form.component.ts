@@ -42,6 +42,25 @@ import { SupplierService } from '../../../../core/services/supplier.service';
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="space-y-5">
 
+          <!-- Code -->
+          <div>
+            <label for="code" class="block text-sm font-medium text-gray-700 mb-1">
+              Code <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="code"
+              type="text"
+              formControlName="code"
+              class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              [class.border-red-400]="isInvalid('code')"
+              [class.border-gray-300]="!isInvalid('code')"
+              placeholder="Supplier code"
+            />
+            @if (isInvalid('code')) {
+              <p class="mt-1 text-xs text-red-600" role="alert">Code is required.</p>
+            }
+          </div>
+
           <!-- Name -->
           <div>
             <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
@@ -129,6 +148,7 @@ export class SupplierFormComponent implements OnInit {
 
   // ── Form ─────────────────────────────────────────────────────────────────────
   readonly form = this.fb.group({
+    code: ['', [Validators.required]],
     name: ['', [Validators.required]],
     contact_info: [''],
   });
@@ -172,6 +192,7 @@ export class SupplierFormComponent implements OnInit {
         const supplier = suppliers.find(s => s.id === id);
         if (supplier) {
           this.form.patchValue({
+            code: (supplier as any).code || '',
             name: supplier.name,
             contact_info: supplier.contact_info ?? '',
           });
@@ -201,6 +222,7 @@ export class SupplierFormComponent implements OnInit {
 
     const raw = this.form.getRawValue();
     const payload = {
+      code: raw.code!.trim(),
       name: raw.name!.trim(),
       contact_info: raw.contact_info?.trim() || undefined,
     };

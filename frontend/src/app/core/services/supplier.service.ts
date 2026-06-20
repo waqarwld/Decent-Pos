@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
+import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Supplier, SupplierCreateRequest } from '../models/inventory';
+import { PaginatedResponse } from '../models/product';
 import { ApiError } from '../models/auth';
 
 @Injectable({ providedIn: 'root' })
@@ -16,8 +17,11 @@ export class SupplierService {
    */
   getAll(): Observable<Supplier[]> {
     return this.http
-      .get<Supplier[]>(this.base)
-      .pipe(catchError(this.handleError));
+      .get<PaginatedResponse<Supplier>>(this.base)
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError),
+      );
   }
 
   /**

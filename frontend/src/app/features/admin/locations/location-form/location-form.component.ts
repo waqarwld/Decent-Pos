@@ -42,6 +42,42 @@ import { LocationService } from '../../../../core/services/location.service';
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="space-y-5">
 
+          <!-- Code -->
+          <div>
+            <label for="code" class="block text-sm font-medium text-gray-700 mb-1">
+              Code <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="code"
+              type="text"
+              formControlName="code"
+              class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              [class.border-red-400]="isInvalid('code')"
+              [class.border-gray-300]="!isInvalid('code')"
+              placeholder="e.g. WH-001"
+            />
+            @if (isInvalid('code')) {
+              <p class="mt-1 text-xs text-red-600" role="alert">Code is required.</p>
+            }
+          </div>
+
+          <!-- Location Type -->
+          <div>
+            <label for="location_type" class="block text-sm font-medium text-gray-700 mb-1">
+              Type <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="location_type"
+              formControlName="location_type"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white"
+            >
+              <option value="warehouse">Warehouse</option>
+              <option value="store">Store</option>
+              <option value="bin">Bin</option>
+              <option value="zone">Zone</option>
+            </select>
+          </div>
+
           <!-- Name -->
           <div>
             <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
@@ -129,7 +165,9 @@ export class LocationFormComponent implements OnInit {
 
   // ── Form ─────────────────────────────────────────────────────────────────────
   readonly form = this.fb.group({
+    code: ['', [Validators.required]],
     name: ['', [Validators.required]],
+    location_type: ['warehouse', [Validators.required]],
     description: [''],
   });
 
@@ -201,7 +239,9 @@ export class LocationFormComponent implements OnInit {
 
     const raw = this.form.getRawValue();
     const payload = {
+      code: raw.code!.trim(),
       name: raw.name!.trim(),
+      location_type: raw.location_type!.trim(),
       description: raw.description?.trim() || undefined,
     };
 
