@@ -49,7 +49,7 @@ import { Product } from '../../../core/models/product';
             <span class="font-medium text-gray-900">{{ product.name }}</span>
             <span class="ml-2 text-xs text-gray-500">{{ product.sku }}</span>
           </div>
-          <span class="text-gray-700">\${{ product.price.toFixed(2) }}</span>
+          <span class="text-gray-700">\${{ (product.price ?? 0).toFixed(2) }}</span>
         </li>
       </ul>
 

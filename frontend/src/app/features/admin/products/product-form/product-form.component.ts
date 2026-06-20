@@ -284,7 +284,7 @@ export class ProductFormComponent implements OnInit {
           sku: product.sku,
           name: product.name,
           unit_of_measure: product.unit_of_measure ?? 'each',
-          price: product.price,
+          price: product.price ?? null,
           description: product.description ?? '',
           category_id: product.category_id ?? null,
         });

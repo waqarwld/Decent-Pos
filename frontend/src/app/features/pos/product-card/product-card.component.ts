@@ -21,7 +21,7 @@ import { Product } from '../../../core/models/product';
       <div class="flex flex-col items-center gap-1 w-full">
         <p class="text-sm font-semibold text-pos-text leading-tight line-clamp-2">{{ product.name }}</p>
         <p class="text-xs text-pos-text-muted">{{ product.sku }}</p>
-        <p class="text-lg font-bold text-pos-accent">{{ product.price | currency }}</p>
+        <p class="text-lg font-bold text-pos-accent">{{ (product.price ?? 0) | currency }}</p>
       </div>
     </button>
   `,

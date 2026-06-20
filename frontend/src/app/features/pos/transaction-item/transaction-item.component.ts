@@ -13,7 +13,7 @@ import { TransactionItem } from '../../../core/models/transaction';
       <!-- Product info -->
       <div class="flex-1 min-w-0" (click)="onEditQty()">
         <p class="text-sm font-semibold text-pos-text truncate">{{ item.product.name }}</p>
-        <p class="text-xs text-pos-text-muted mt-0.5">{{ item.product.price | currency }} each</p>
+        <p class="text-xs text-pos-text-muted mt-0.5">{{ (item.product.price ?? 0) | currency }} each</p>
       </div>
 
       <!-- Quantity controls -->
@@ -75,7 +75,7 @@ export class TransactionItemComponent {
   @Output() editQty = new EventEmitter<number>();
 
   get lineTotal(): number {
-    return this.item.product.price * this.item.quantity;
+    return (this.item.product.price ?? 0) * this.item.quantity;
   }
 
   onIncrement(): void {

@@ -18,7 +18,7 @@ export class TransactionService {
 
   /** Computed running total: sum of (price × quantity) for all items */
   readonly total = computed(() =>
-    this._items().reduce((sum, item) => sum + item.product.price * item.quantity, 0)
+    this._items().reduce((sum, item) => sum + (item.product.price ?? 0) * item.quantity, 0)
   );
 
   /** Signal that surfaces the last submission error, or null when no error */

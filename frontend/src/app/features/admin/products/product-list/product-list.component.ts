@@ -128,7 +128,7 @@ import { Product, PaginatedResponse } from '../../../../core/models/product';
                 <tr class="hover:bg-gray-50 transition-colors">
                   <td class="px-4 py-3 font-mono text-gray-700">{{ product.sku }}</td>
                   <td class="px-4 py-3 text-gray-800">{{ product.name }}</td>
-                  <td class="px-4 py-3 text-gray-700">&#36;{{ product.price.toFixed(2) }}</td>
+                  <td class="px-4 py-3 text-gray-700">&#36;{{ (product.price ?? 0).toFixed(2) }}</td>
                   <td class="px-4 py-3 text-gray-500">{{ product.category?.name ?? '—' }}</td>
                   <td class="px-4 py-3 text-right whitespace-nowrap">
                     <a

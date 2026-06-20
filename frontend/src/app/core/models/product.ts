@@ -20,7 +20,7 @@ export interface Product {
   sku: string;
   name: string;
   description?: string;
-  price: number;
+  price?: number;
   unit_of_measure?: string;
   category_id?: number;
   category?: Category;

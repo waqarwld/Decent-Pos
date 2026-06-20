@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Product struct {
-	ProductID     int       `json:"product_id"`
+	ProductID     int       `json:"id"`
 	SKU           string    `json:"sku"`
 	Name          string    `json:"name"`
 	Description   *string   `json:"description,omitempty"`
@@ -11,14 +11,14 @@ type Product struct {
 	UnitOfMeasure string    `json:"unit_of_measure"`
 	WeightKg      *float64  `json:"weight_kg,omitempty"`
 	CostPrice     *float64  `json:"cost_price,omitempty"`
-	SellingPrice  *float64  `json:"selling_price,omitempty"`
+	SellingPrice  *float64  `json:"price,omitempty"`
 	Status        string    `json:"status"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 type Category struct {
-	CategoryID       int       `json:"category_id"`
+	CategoryID       int       `json:"id"`
 	Name             string    `json:"name"`
 	Description      *string   `json:"description,omitempty"`
 	ParentCategoryID *int      `json:"parent_category_id,omitempty"`
@@ -27,7 +27,7 @@ type Category struct {
 }
 
 type Location struct {
-	LocationID       int       `json:"location_id"`
+	LocationID       int       `json:"id"`
 	Code             string    `json:"code"`
 	Name             string    `json:"name"`
 	LocationType     string    `json:"location_type"`
@@ -38,7 +38,7 @@ type Location struct {
 }
 
 type Supplier struct {
-	SupplierID    int       `json:"supplier_id"`
+	SupplierID    int       `json:"id"`
 	Code          string    `json:"code"`
 	Name          string    `json:"name"`
 	ContactPerson *string   `json:"contact_person,omitempty"`
@@ -50,7 +50,7 @@ type Supplier struct {
 }
 
 type Movement struct {
-	MovementID        int       `json:"movement_id"`
+	MovementID        int       `json:"id"`
 	ProductID         int       `json:"product_id"`
 	LocationID        int       `json:"location_id"`
 	MovementTypeID    int       `json:"movement_type_id"`
@@ -107,13 +107,13 @@ type TransferResult struct {
 }
 
 type ProductStockSummary struct {
-	ProductID              int      `json:"product_id"`
-	SKU                    string   `json:"sku"`
-	ProductName            string   `json:"product_name"`
-	CategoryName           *string  `json:"category_name,omitempty"`
-	LocationCount          int      `json:"location_count"`
-	TotalQuantityOnHand    int      `json:"total_quantity_on_hand"`
-	TotalQuantityAvailable int      `json:"total_quantity_available"`
+	ProductID               int      `json:"product_id"`
+	SKU                     string   `json:"sku"`
+	ProductName             string   `json:"product_name"`
+	CategoryName            *string  `json:"category_name,omitempty"`
+	LocationCount           int      `json:"location_count"`
+	TotalQuantityOnHand     int      `json:"total_quantity_on_hand"`
+	TotalQuantityAvailable  int      `json:"total_quantity_available"`
 	TotalInventoryValueCost *float64 `json:"total_inventory_value_cost,omitempty"`
 }
 
