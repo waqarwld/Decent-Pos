@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
+import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PaginatedResponse } from '../models/product';
 import { InventoryMovement } from '../models/inventory';
@@ -74,8 +74,11 @@ export class ReportService {
    */
   getAlerts(): Observable<LowStockAlert[]> {
     return this.http
-      .get<LowStockAlert[]>(`${this.base}/stock/alerts`)
-      .pipe(catchError(this.handleError));
+      .get<{ data: LowStockAlert[] }>(`${this.base}/stock/alerts`)
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError),
+      );
   }
 
   /**
@@ -98,8 +101,11 @@ export class ReportService {
       params = params.set('location_id', String(locationId));
     }
     return this.http
-      .get<ValuationRecord[]>(`${this.base}/valuation`, { params })
-      .pipe(catchError(this.handleError));
+      .get<{ data: ValuationRecord[] }>(`${this.base}/valuation`, { params })
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError),
+      );
   }
 
   /**
@@ -126,8 +132,11 @@ export class ReportService {
       params = params.set('location_id', String(locationId));
     }
     return this.http
-      .get<TurnoverItem[]>(`${this.base}/turnover`, { params })
-      .pipe(catchError(this.handleError));
+      .get<{ data: TurnoverItem[] }>(`${this.base}/turnover`, { params })
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError),
+      );
   }
 
   /**
@@ -136,8 +145,11 @@ export class ReportService {
    */
   getSupplierPerformance(): Observable<SupplierPerformance[]> {
     return this.http
-      .get<SupplierPerformance[]>(`${this.base}/suppliers/performance`)
-      .pipe(catchError(this.handleError));
+      .get<{ data: SupplierPerformance[] }>(`${this.base}/suppliers/performance`)
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError),
+      );
   }
 
   /**
@@ -166,8 +178,11 @@ export class ReportService {
    */
   getAging(): Observable<AgingRecord[]> {
     return this.http
-      .get<AgingRecord[]>(`${this.base}/stock/aging`)
-      .pipe(catchError(this.handleError));
+      .get<{ data: AgingRecord[] }>(`${this.base}/stock/aging`)
+      .pipe(
+        map((response) => response.data),
+        catchError(this.handleError),
+      );
   }
 
   /** Normalise HTTP errors; never expose raw objects to consumers */
