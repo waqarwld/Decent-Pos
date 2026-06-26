@@ -111,6 +111,14 @@ type PaymentMethod = 'cash' | 'card' | 'split' | 'other';
           </div>
         }
 
+        <!-- Transaction error -->
+        @if (submitError()) {
+          <div class="mb-4 p-3 bg-pos-danger/10 border border-pos-danger/30 rounded-xl text-sm text-pos-danger flex items-start gap-2">
+            <span class="shrink-0 text-base">⚠</span>
+            <span>{{ submitError() }}</span>
+          </div>
+        }
+
         <!-- Actions -->
         <div class="flex gap-3">
           <button
@@ -150,6 +158,7 @@ export class PaymentOverlayComponent {
   @Output() cancelled = new EventEmitter<void>();
 
   readonly submitting = signal(false);
+  readonly submitError = signal<string | null>(null);
   readonly selectedMethod = signal<PaymentMethod>('cash');
   readonly changeDue = signal(0);
   tenderAmount = 0;
@@ -201,14 +210,15 @@ export class PaymentOverlayComponent {
     if (!this.canComplete() || this.submitting()) return;
 
     this.submitting.set(true);
+    this.submitError.set(null);
     this.transactionService.submit(this.locationId).subscribe({
       next: () => {
         this.submitting.set(false);
         this.completed.emit();
       },
-      error: () => {
+      error: (err: Error) => {
         this.submitting.set(false);
-        // Error is surfaced via transactionService.error
+        this.submitError.set(err.message ?? 'Payment failed. Please try again.');
       },
     });
   }

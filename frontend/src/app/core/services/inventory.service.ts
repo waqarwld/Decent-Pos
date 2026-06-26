@@ -4,6 +4,7 @@ import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   InventoryMovement,
+  OperationResult,
   ReceiveRequest,
   ShipRequest,
   TransferRequest,
@@ -34,9 +35,9 @@ export class InventoryService {
    * Record a stock receipt from a supplier.
    * POST /api/v1/inventory/receive
    */
-  receive(req: ReceiveRequest): Observable<InventoryMovement> {
+  receive(req: ReceiveRequest): Observable<OperationResult> {
     return this.http
-      .post<InventoryMovement>(`${this.base}/receive`, req)
+      .post<OperationResult>(`${this.base}/receive`, req)
       .pipe(catchError(this.handleError));
   }
 
@@ -44,9 +45,9 @@ export class InventoryService {
    * Record a stock shipment (outbound).
    * POST /api/v1/inventory/ship
    */
-  ship(req: ShipRequest): Observable<InventoryMovement> {
+  ship(req: ShipRequest): Observable<OperationResult> {
     return this.http
-      .post<InventoryMovement>(`${this.base}/ship`, req)
+      .post<OperationResult>(`${this.base}/ship`, req)
       .pipe(catchError(this.handleError));
   }
 
@@ -54,9 +55,9 @@ export class InventoryService {
    * Transfer stock between locations.
    * POST /api/v1/inventory/transfer
    */
-  transfer(req: TransferRequest): Observable<InventoryMovement> {
+  transfer(req: TransferRequest): Observable<OperationResult> {
     return this.http
-      .post<InventoryMovement>(`${this.base}/transfer`, req)
+      .post<OperationResult>(`${this.base}/transfer`, req)
       .pipe(catchError(this.handleError));
   }
 
@@ -64,9 +65,9 @@ export class InventoryService {
    * Apply a manual stock adjustment.
    * POST /api/v1/inventory/adjust
    */
-  adjust(req: AdjustRequest): Observable<InventoryMovement> {
+  adjust(req: AdjustRequest): Observable<OperationResult> {
     return this.http
-      .post<InventoryMovement>(`${this.base}/adjust`, req)
+      .post<OperationResult>(`${this.base}/adjust`, req)
       .pipe(catchError(this.handleError));
   }
 

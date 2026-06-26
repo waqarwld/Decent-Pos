@@ -1,15 +1,17 @@
 package models
 
 type CreateProductRequest struct {
-	SKU           string   `json:"sku" validate:"required,min=1,max=50"`
-	Name          string   `json:"name" validate:"required,min=1,max=200"`
-	Description   *string  `json:"description"`
-	CategoryID    *int     `json:"category_id"`
-	UnitOfMeasure string   `json:"unit_of_measure" validate:"required"`
-	WeightKg      *float64 `json:"weight_kg" validate:"omitempty,min=0"`
-	CostPrice     *float64 `json:"cost_price" validate:"omitempty,min=0"`
-	SellingPrice  *float64 `json:"selling_price" validate:"omitempty,min=0"`
-	Status        string   `json:"status" validate:"omitempty,oneof=active discontinued pending"`
+	SKU               string   `json:"sku" validate:"required,min=1,max=50"`
+	Name              string   `json:"name" validate:"required,min=1,max=200"`
+	Description       *string  `json:"description"`
+	CategoryID        *int     `json:"category_id"`
+	UnitOfMeasure     string   `json:"unit_of_measure" validate:"required"`
+	WeightKg          *float64 `json:"weight_kg" validate:"omitempty,min=0"`
+	CostPrice         *float64 `json:"cost_price" validate:"omitempty,min=0"`
+	SellingPrice      *float64 `json:"selling_price" validate:"omitempty,min=0"`
+	Status            string   `json:"status" validate:"omitempty,oneof=active discontinued pending"`
+	InitialQuantity   *int     `json:"initial_quantity" validate:"omitempty,min=0"`
+	InitialLocationID *int     `json:"initial_location_id" validate:"omitempty,min=1"`
 }
 
 type UpdateProductRequest struct {

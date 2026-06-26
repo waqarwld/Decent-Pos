@@ -91,3 +91,10 @@ export interface AdjustRequest {
   quantity_delta: number;
   reason: string;
 }
+
+export interface OperationResult {
+  success: boolean;
+  message: string;
+  movement_id?: number;
+  new_stock_level?: number;
+}

@@ -4,7 +4,9 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductService } from '../../../../core/services/product.service';
 import { CategoryService } from '../../../../core/services/category.service';
+import { LocationService } from '../../../../core/services/location.service';
 import { Category } from '../../../../core/models/product';
+import { Location } from '../../../../core/models/inventory';
 
 @Component({
   selector: 'app-product-form',
@@ -164,6 +166,53 @@ import { Category } from '../../../../core/models/product';
             }
           </div>
 
+          <!-- Initial stock (create mode only) -->
+          @if (!isEditMode()) {
+            <div class="space-y-4 border-t border-dashed border-gray-200 pt-4 mt-2">
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Initial Stock</p>
+
+              <!-- Initial Quantity -->
+              <div>
+                <label for="initial_quantity" class="block text-sm font-medium text-gray-700 mb-1">
+                  Initial Quantity
+                </label>
+                <input
+                  id="initial_quantity"
+                  type="number"
+                  formControlName="initial_quantity"
+                  min="0"
+                  step="1"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  placeholder="0"
+                />
+              </div>
+
+              <!-- Initial Location -->
+              <div>
+                <label for="initial_location_id" class="block text-sm font-medium text-gray-700 mb-1">
+                  Stock Location
+                </label>
+                @if (locationsLoading()) {
+                  <p class="text-xs text-gray-400">Loading locations…</p>
+                } @else {
+                  <select
+                    id="initial_location_id"
+                    formControlName="initial_location_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white"
+                    [class.border-gray-300]="((form.get('initial_quantity')?.value) ?? 0) <= 0"
+                    [disabled]="(form.get('initial_quantity')?.value ?? 0) <= 0"
+                  >
+                    <option [ngValue]="null">— Select location —</option>
+                    @for (loc of locations(); track loc.id) {
+                      <option [ngValue]="loc.id">{{ loc.name }} ({{ loc.code }})</option>
+                    }
+                  </select>
+                }
+                <p class="mt-1 text-xs text-gray-400">Only required if initial quantity is greater than 0.</p>
+              </div>
+            </div>
+          }
+
           <!-- Submit error -->
           @if (submitError()) {
             <div
@@ -209,6 +258,7 @@ import { Category } from '../../../../core/models/product';
 export class ProductFormComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly categoryService = inject(CategoryService);
+  private readonly locationService = inject(LocationService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
@@ -225,6 +275,8 @@ export class ProductFormComponent implements OnInit {
     price: [null as number | null, [Validators.required, Validators.min(0)]],
     description: [''],
     category_id: [null as number | null],
+    initial_quantity: [null as number | null, [Validators.min(0)]],
+    initial_location_id: [null as number | null],
   });
 
   // ── State ────────────────────────────────────────────────────────────────────
@@ -235,9 +287,12 @@ export class ProductFormComponent implements OnInit {
   readonly submitSuccess = signal(false);
   readonly categories = signal<Category[]>([]);
   readonly categoriesLoading = signal(false);
+  readonly locations = signal<Location[]>([]);
+  readonly locationsLoading = signal(false);
 
   ngOnInit(): void {
     this.loadCategories();
+    this.loadLocations();
 
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
@@ -270,6 +325,19 @@ export class ProductFormComponent implements OnInit {
       error: () => {
         // Non-fatal — category dropdown will just be empty
         this.categoriesLoading.set(false);
+      },
+    });
+  }
+
+  private loadLocations(): void {
+    this.locationsLoading.set(true);
+    this.locationService.getAll().subscribe({
+      next: (locs) => {
+        this.locations.set(locs);
+        this.locationsLoading.set(false);
+      },
+      error: () => {
+        this.locationsLoading.set(false);
       },
     });
   }
@@ -310,7 +378,7 @@ export class ProductFormComponent implements OnInit {
     this.submitSuccess.set(false);
 
     const raw = this.form.getRawValue();
-    const payload = {
+    const payload: any = {
       sku: raw.sku!.trim(),
       name: raw.name!.trim(),
       unit_of_measure: raw.unit_of_measure!.trim(),
@@ -318,6 +386,15 @@ export class ProductFormComponent implements OnInit {
       description: raw.description?.trim() || undefined,
       category_id: raw.category_id ?? undefined,
     };
+
+    if (!this.isEditMode()) {
+      const qty = raw.initial_quantity ?? 0;
+      const locId = raw.initial_location_id ?? null;
+      if (qty > 0 && locId !== null) {
+        payload.initial_quantity = qty;
+        payload.initial_location_id = locId;
+      }
+    }
 
     const request$ = this.isEditMode() && this.productId !== null
       ? this.productService.update(this.productId, payload)

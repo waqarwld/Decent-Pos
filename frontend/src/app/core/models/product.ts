@@ -39,6 +39,8 @@ export interface ProductCreateRequest {
   category_id?: number;
   status?: string;
   weight_kg?: number;
+  initial_quantity?: number;
+  initial_location_id?: number;
 }
 
 export interface ProductUpdateRequest {

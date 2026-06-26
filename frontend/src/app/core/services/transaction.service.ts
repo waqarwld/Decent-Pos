@@ -1,14 +1,12 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, forkJoin, throwError } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { Observable, catchError, forkJoin, map, throwError } from 'rxjs';
 import { Product } from '../models/product';
 import { TransactionItem } from '../models/transaction';
-import { ShipRequest } from '../models/inventory';
+import { InventoryService } from './inventory.service';
 
 @Injectable({ providedIn: 'root' })
 export class TransactionService {
-  private readonly http = inject(HttpClient);
+  private readonly inventoryService = inject(InventoryService);
 
   /** Writable signal holding the current list of transaction items */
   private readonly _items = signal<TransactionItem[]>([]);
@@ -94,24 +92,33 @@ export class TransactionService {
       return throwError(() => new Error('No items in transaction'));
     }
 
-    const requests = items.map((item) => {
-      const body: ShipRequest = {
+    const requests = items.map((item) =>
+      this.inventoryService.ship({
         product_id: item.product.id,
         location_id: locationId,
         quantity: item.quantity,
-      };
-      return this.http.post(`${environment.apiBaseUrl}/api/v1/inventory/ship`, body);
-    });
+      })
+    );
 
     return forkJoin(requests).pipe(
+      map((results) => {
+        const failures = results.filter((r) => !r.success);
+        if (failures.length > 0) {
+          const msg = failures.map((f) => f.message).join('; ');
+          this._error.set(msg);
+          throw new Error(msg);
+        }
+        this._error.set(null);
+        this._items.set([]);
+        return results;
+      }),
       catchError((err) => {
-        // Preserve state and surface error
         const message: string =
           err?.error?.message ?? err?.error?.error ?? err?.message ?? 'Submission failed';
         this._error.set(message);
-        return throwError(() => err);
+        return throwError(() => new Error(message));
       })
-    ) as Observable<unknown[]>;
+    );
   }
 
   /**

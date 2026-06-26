@@ -122,7 +122,19 @@ export class PosShellComponent {
   readonly defaultLocationId = 1;
 
   onProductFound(product: Product): void {
-    this.transactionService.addProduct(product);
+    const currentItems = this.transactionService.items();
+    const existing = currentItems.find((i) => i.product.id === product.id);
+
+    if (existing) {
+      // Item already in cart — increment by 1 on each scan (typical POS behaviour)
+      this.transactionService.increment(product.id);
+    } else {
+      // New item — show numpad so cashier can set qty before adding
+      this.numpadTargetProduct.set(product);
+      this.numpadTitle.set(product.name);
+      this.numpadInitialValue.set(1);
+      this.showNumpad.set(true);
+    }
   }
 
   onProductAdd(product: Product): void {

@@ -83,7 +83,6 @@ func (s *Server) registerRoutes() {
 	// Build repos → services → handlers
 	productRepo := repository.NewProductRepository(s.db)
 	productSvc := services.NewProductService(productRepo)
-	productH := handlers.NewProductHandler(productSvc)
 
 	categoryRepo := repository.NewCategoryRepository(s.db)
 	categorySvc := services.NewCategoryService(categoryRepo)
@@ -100,6 +99,8 @@ func (s *Server) registerRoutes() {
 	inventoryRepo := repository.NewInventoryRepository(s.db)
 	inventorySvc := services.NewInventoryService(inventoryRepo)
 	inventoryH := handlers.NewInventoryHandler(inventorySvc)
+
+	productH := handlers.NewProductHandler(productSvc, inventorySvc)
 
 	reportRepo := repository.NewReportRepository(s.db)
 	reportSvc := services.NewReportService(reportRepo)
