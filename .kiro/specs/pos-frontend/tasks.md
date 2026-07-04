@@ -185,13 +185,13 @@ Implement an Angular 17+ SPA for a Point of Sale system with JWT authentication,
     - **Property 10: Required field validation prevents form submission**
     - **Validates: Requirements 3.7**
     - _Requirements: 3.7_
-  - [ ] 11.5 Write property test for `ProductFormComponent` — Property 11: CRUD forms dispatch correct HTTP method and URL
+  - [x] 11.5 Write property test for `ProductFormComponent` — Property 11: CRUD forms dispatch correct HTTP method and URL
     - **Property 11: CRUD forms dispatch correct HTTP method and URL**
     - **Validates: Requirements 3.2, 3.3**
     - _Requirements: 3.2, 3.3_
 
-- [ ] 12. Implement category, location, and supplier admin components
-  - [ ] 12.1 Implement `CategoryListComponent` and `CategoryFormComponent` in `src/app/features/admin/categories/`
+- [x] 12. Implement category, location, and supplier admin components
+  - [x] 12.1 Implement `CategoryListComponent` and `CategoryFormComponent` in `src/app/features/admin/categories/`
     - List: display all categories from `CategoryService.getAll()`; links to create/edit
     - Form: `name` (required), `description`; create → POST, edit → PUT; inline validation
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
@@ -200,7 +200,7 @@ Implement an Angular 17+ SPA for a Point of Sale system with JWT authentication,
     - **Property 11: CRUD forms dispatch correct HTTP method and URL (category)**
     - **Validates: Requirements 4.2, 4.3, 4.4**
     - _Requirements: 4.2, 4.3, 4.4_
-  - [ ] 12.3 Implement `LocationListComponent` and `LocationFormComponent` in `src/app/features/admin/locations/`
+  - [x] 12.3 Implement `LocationListComponent` and `LocationFormComponent` in `src/app/features/admin/locations/`
     - List: display all locations from `LocationService.getAll()`; links to create/edit
     - Form: `name` (required), `description`; create → POST, edit → PUT; inline validation
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
@@ -219,27 +219,27 @@ Implement an Angular 17+ SPA for a Point of Sale system with JWT authentication,
     - **Validates: Requirements 6.2, 6.3, 6.4**
     - _Requirements: 6.2, 6.3, 6.4_
 
-- [ ] 13. Checkpoint — Ensure all admin CRUD components compile and tests pass
+- [x] 13. Checkpoint — Ensure all admin CRUD components compile and tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 14. Implement inventory movement components
-  - [ ] 14.1 Implement `InventoryListComponent` in `src/app/features/admin/inventory/inventory-list/`
+- [x] 14. Implement inventory movement components
+  - [x] 14.1 Implement `InventoryListComponent` in `src/app/features/admin/inventory/inventory-list/`
     - Display recent movements from `InventoryService.getMovements()`
     - Links to receive, ship, transfer, adjust forms
     - _Requirements: 7.1_
-  - [ ] 14.2 Implement `ReceiveFormComponent` in `src/app/features/admin/inventory/receive-form/`
+  - [x] 14.2 Implement `ReceiveFormComponent` in `src/app/features/admin/inventory/receive-form/`
     - Reactive form: `product_id`, `location_id`, `quantity`, `supplier_id` (all required)
     - Submit → POST via `InventoryService.receive()`; display API error on failure
     - _Requirements: 7.2, 7.6, 7.7_
-  - [ ] 14.3 Implement `ShipFormComponent` in `src/app/features/admin/inventory/ship-form/`
+  - [x] 14.3 Implement `ShipFormComponent` in `src/app/features/admin/inventory/ship-form/`
     - Reactive form: `product_id`, `location_id`, `quantity` (all required)
     - Submit → POST via `InventoryService.ship()`; display API error on failure
     - _Requirements: 7.3, 7.6, 7.7_
-  - [ ] 14.4 Implement `TransferFormComponent` in `src/app/features/admin/inventory/transfer-form/`
+  - [x] 14.4 Implement `TransferFormComponent` in `src/app/features/admin/inventory/transfer-form/`
     - Reactive form: `product_id`, `source_location_id`, `destination_location_id`, `quantity` (all required)
     - Submit → POST via `InventoryService.transfer()`; display API error on failure
     - _Requirements: 7.4, 7.6, 7.7_
-  - [ ] 14.5 Implement `AdjustFormComponent` in `src/app/features/admin/inventory/adjust-form/`
+  - [x] 14.5 Implement `AdjustFormComponent` in `src/app/features/admin/inventory/adjust-form/`
     - Reactive form: `product_id`, `location_id`, `quantity_delta`, `reason` (all required)
     - Submit → POST via `InventoryService.adjust()`; display API error on failure
     - _Requirements: 7.5, 7.6, 7.7_
@@ -252,8 +252,8 @@ Implement an Angular 17+ SPA for a Point of Sale system with JWT authentication,
     - **Validates: Requirements 7.2, 7.3, 7.4, 7.5**
     - _Requirements: 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 15. Implement `ReportService` and all report components
-  - [ ] 15.1 Implement `ReportService` in `src/app/core/services/report.service.ts`
+- [x] 15. Implement `ReportService` and all report components
+  - [x] 15.1 Implement `ReportService` in `src/app/core/services/report.service.ts`
     - `getSummary()`: GET `/api/v1/reports/stock/summary`
     - `getStock()`: GET `/api/v1/reports/stock`
     - `getAlerts()`: GET `/api/v1/reports/stock/alerts`
@@ -263,11 +263,11 @@ Implement an Angular 17+ SPA for a Point of Sale system with JWT authentication,
     - `getRecentMovements()`: GET `/api/v1/reports/movements/recent`
     - `getAging()`: GET `/api/v1/reports/stock/aging`
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8_
-  - [ ] 15.2 Implement `ReportsDashboardComponent` in `src/app/features/admin/reports/reports-dashboard/`
+  - [x] 15.2 Implement `ReportsDashboardComponent` in `src/app/features/admin/reports/reports-dashboard/`
     - Display summary card data from `ReportService.getSummary()` (total products, total value, low stock count)
     - Links to all sub-report views
     - _Requirements: 8.1_
-  - [ ] 15.3 Implement individual report components: `StockReportComponent`, `AlertsReportComponent`, `ValuationReportComponent`, `TurnoverReportComponent`, `SupplierPerformanceComponent`, `RecentMovementsComponent`, `AgingReportComponent`
+  - [x] 15.3 Implement individual report components: `StockReportComponent`, `AlertsReportComponent`, `ValuationReportComponent`, `TurnoverReportComponent`, `SupplierPerformanceComponent`, `RecentMovementsComponent`, `AgingReportComponent`
     - Each calls its corresponding `ReportService` method on `ngOnInit`
     - Display data in a table; highlight low-stock rows in `AlertsReportComponent`
     - _Requirements: 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8_
@@ -276,26 +276,26 @@ Implement an Angular 17+ SPA for a Point of Sale system with JWT authentication,
     - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8**
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8_
 
-- [ ] 16. Implement `AdminShellComponent` and wire all admin routes
+- [x] 16. Implement `AdminShellComponent` and wire all admin routes
   - Compose `TopNavComponent`, `SidebarNavComponent`, and `RouterOutlet` for child routes
   - Ensure all lazy-loaded admin feature chunks are correctly referenced in `app.routes.ts`
   - _Requirements: 9.1, 9.4_
 
-- [ ] 17. Checkpoint — Ensure full application compiles, all routes resolve, and all tests pass
+- [x] 17. Checkpoint — Ensure full application compiles, all routes resolve, and all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 18. Add Docker and Nginx configuration
-  - [ ] 18.1 Create `Dockerfile` at project root using the multi-stage build from the design
+- [x] 18. Add Docker and Nginx configuration
+  - [x] 18.1 Create `Dockerfile` at project root using the multi-stage build from the design
     - Stage 1: `node:20-alpine` — `npm ci`, inject `API_BASE_URL` build arg into `environment.prod.ts`, `npm run build --configuration production`
     - Stage 2: `nginx:alpine` — copy `dist/pos-frontend/browser` to `/usr/share/nginx/html`, copy `nginx.conf`
     - `EXPOSE 80`
     - _Requirements: 10.1, 10.2, 10.3, 10.4_
-  - [ ] 18.2 Create `nginx.conf` at project root
+  - [x] 18.2 Create `nginx.conf` at project root
     - `try_files $uri $uri/ /index.html` for SPA routing support
     - Proxy `/api/` to `http://api:8080`
     - _Requirements: 10.5_
 
-- [ ] 19. Final checkpoint — Verify Docker build and all tests pass
+- [x] 19. Final checkpoint — Verify Docker build and all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

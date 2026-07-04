@@ -29,10 +29,10 @@ const productArb = fc.record({
   updated_at: fc.constant('2024-01-01T00:00:00Z'),
 }) as fc.Arbitrary<Product>;
 
-/** Create a fresh TransactionService instance with a mocked HttpClient */
+/** Create a fresh TransactionService instance with a mocked InventoryService */
 function makeService(): TransactionService {
-  const mockHttpClient = {} as any;
-  mockInject.mockReturnValue(mockHttpClient);
+  const mockInventoryService = {} as any;
+  mockInject.mockReturnValue(mockInventoryService);
   return new TransactionService();
 }
 
@@ -267,19 +267,19 @@ describe('TransactionService — Property 8: Transaction submission calls ship p
 
     fc.assert(
       fc.property(uniqueItemsArb, locationIdArb, (products, locationId) => {
-        // Track every call made to http.post
-        const postCalls: Array<{ url: string; body: unknown }> = [];
-        const mockHttpClient = {
-          post: vi.fn((url: string, body: unknown) => {
-            postCalls.push({ url, body });
-            // Return an observable that immediately completes with a value
+        // Track every call made to inventoryService.ship()
+        const shipCalls: Array<{ product_id: number; location_id: number; quantity: number }> = [];
+        const mockInventoryService = {
+          ship: vi.fn((req: { product_id: number; location_id: number; quantity: number }) => {
+            shipCalls.push(req);
+            // Return an observable that immediately completes with a success result
             return new (require('rxjs').Observable)((subscriber: any) => {
-              subscriber.next({});
+              subscriber.next({ success: true, message: 'ok' });
               subscriber.complete();
             });
           }),
         };
-        mockInject.mockReturnValue(mockHttpClient);
+        mockInject.mockReturnValue(mockInventoryService);
         const service = new TransactionService();
 
         // Add each product once (quantity = 1 per item)
@@ -290,22 +290,15 @@ describe('TransactionService — Property 8: Transaction submission calls ship p
         // Submit the transaction
         service.submit(locationId).subscribe();
 
-        // Assert: exactly N POST calls were made
-        expect(postCalls.length).toBe(products.length);
+        // Assert: exactly N ship() calls were made
+        expect(shipCalls.length).toBe(products.length);
 
-        // Assert: every call targets the correct endpoint
-        for (const call of postCalls) {
-          expect(call.url).toContain('/api/v1/inventory/ship');
-        }
-
-        // Assert: each line item has a corresponding POST with correct product_id, location_id, quantity
+        // Assert: each line item has a corresponding ship() call with correct product_id, location_id, quantity
         for (const product of products) {
-          const matchingCall = postCalls.find(
-            (c) => (c.body as any).product_id === product.id
-          );
+          const matchingCall = shipCalls.find((c) => c.product_id === product.id);
           expect(matchingCall).toBeDefined();
-          expect((matchingCall!.body as any).location_id).toBe(locationId);
-          expect((matchingCall!.body as any).quantity).toBe(1);
+          expect(matchingCall!.location_id).toBe(locationId);
+          expect(matchingCall!.quantity).toBe(1);
         }
       }),
       { numRuns: 100 }
@@ -341,10 +334,10 @@ describe('TransactionService — Property 9: API error preserves transaction sta
         uniqueProductsArb,
         errorArb,
         (products, errorResponse) => {
-          // Build a mock HttpClient that fails on the first POST call
+          // Build a mock InventoryService that fails on the first ship() call
           let callCount = 0;
-          const mockHttpClient = {
-            post: vi.fn((_url: string, _body: unknown) => {
+          const mockInventoryService = {
+            ship: vi.fn((_req: unknown) => {
               callCount++;
               // The first call fails; subsequent calls would succeed (forkJoin short-circuits on error)
               return new (require('rxjs').Observable)((subscriber: any) => {
@@ -355,7 +348,7 @@ describe('TransactionService — Property 9: API error preserves transaction sta
               });
             }),
           };
-          mockInject.mockReturnValue(mockHttpClient);
+          mockInject.mockReturnValue(mockInventoryService);
           const service = new TransactionService();
 
           // Add all products to the transaction

@@ -32,9 +32,10 @@ const mockProduct = {
  * Angular's inject() is called once per class property in declaration order:
  *   1. ProductService
  *   2. CategoryService
- *   3. ActivatedRoute
- *   4. Router
- *   5. FormBuilder
+ *   3. LocationService
+ *   4. ActivatedRoute
+ *   5. Router
+ *   6. FormBuilder
  */
 function buildMocks() {
   const fb = new FormBuilder();
@@ -46,6 +47,10 @@ function buildMocks() {
   };
 
   const mockCategoryService = {
+    getAll: vi.fn().mockReturnValue(of([])),
+  };
+
+  const mockLocationService = {
     getAll: vi.fn().mockReturnValue(of([])),
   };
 
@@ -62,12 +67,13 @@ function buildMocks() {
     if (token === FormBuilder) return fb;
     if ((token as { name?: string })?.name === 'ProductService') return mockProductService;
     if ((token as { name?: string })?.name === 'CategoryService') return mockCategoryService;
+    if ((token as { name?: string })?.name === 'LocationService') return mockLocationService;
     if ((token as { name?: string })?.name === 'ActivatedRoute') return mockRoute;
     if ((token as { name?: string })?.name === 'Router') return mockRouter;
     return undefined;
   });
 
-  return { fb, mockProductService, mockCategoryService, mockRoute, mockRouter };
+  return { fb, mockProductService, mockCategoryService, mockLocationService, mockRoute, mockRouter };
 }
 
 /** Create and initialise a component instance with fresh mocks. */
@@ -394,6 +400,7 @@ function buildCreateModeMocks() {
   };
 
   const mockCategoryService = { getAll: vi.fn().mockReturnValue(of([])) };
+  const mockLocationService = { getAll: vi.fn().mockReturnValue(of([])) };
   const mockRoute = { snapshot: { paramMap: { get: (_: string) => null } } };
   const mockRouter = { navigate: vi.fn() };
 
@@ -401,6 +408,7 @@ function buildCreateModeMocks() {
     if (token === FormBuilder) return fb;
     if ((token as { name?: string })?.name === 'ProductService') return mockProductService;
     if ((token as { name?: string })?.name === 'CategoryService') return mockCategoryService;
+    if ((token as { name?: string })?.name === 'LocationService') return mockLocationService;
     if ((token as { name?: string })?.name === 'ActivatedRoute') return mockRoute;
     if ((token as { name?: string })?.name === 'Router') return mockRouter;
     return undefined;
@@ -423,6 +431,7 @@ function buildEditModeMocks(id: number) {
   };
 
   const mockCategoryService = { getAll: vi.fn().mockReturnValue(of([])) };
+  const mockLocationService = { getAll: vi.fn().mockReturnValue(of([])) };
   const mockRoute = { snapshot: { paramMap: { get: (_: string) => String(id) } } };
   const mockRouter = { navigate: vi.fn() };
 
@@ -430,6 +439,7 @@ function buildEditModeMocks(id: number) {
     if (token === FormBuilder) return fb;
     if ((token as { name?: string })?.name === 'ProductService') return mockProductService;
     if ((token as { name?: string })?.name === 'CategoryService') return mockCategoryService;
+    if ((token as { name?: string })?.name === 'LocationService') return mockLocationService;
     if ((token as { name?: string })?.name === 'ActivatedRoute') return mockRoute;
     if ((token as { name?: string })?.name === 'Router') return mockRouter;
     return undefined;
