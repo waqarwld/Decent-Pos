@@ -13,7 +13,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 
       <div class="flex-1 overflow-y-auto space-y-0.5 px-2">
         <a
-          routerLink="/admin"
+          routerLink="/admin/dashboard"
           routerLinkActive="bg-white/10 text-white"
           [routerLinkActiveOptions]="{ exact: true }"
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/60 hover:bg-white/5 hover:text-white transition"

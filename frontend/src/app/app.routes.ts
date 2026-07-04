@@ -23,7 +23,14 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/admin/admin-shell/admin-shell.component').then(m => m.AdminShellComponent),
     children: [
-      { path: '', redirectTo: 'products', pathMatch: 'full' },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+
+      // Dashboard
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/admin/dashboard/dashboard.component').then(m => m.DashboardComponent),
+      },
 
       // Products
       {

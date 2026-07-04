@@ -53,15 +53,14 @@ export interface SupplierCreateRequest {
 
 export interface InventoryMovement {
   id: number;
-  type: 'receive' | 'ship' | 'transfer' | 'adjust';
   product_id: number;
-  product_name: string;
+  location_id: number;
+  movement_type_id: number;
   quantity: number;
-  location_id?: number;
-  source_location_id?: number;
-  destination_location_id?: number;
-  supplier_id?: number;
-  reason?: string;
+  unit_cost?: number;
+  reference_document?: string;
+  notes?: string;
+  created_by: string;
   created_at: string;
 }
 
