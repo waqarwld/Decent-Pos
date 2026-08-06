@@ -133,7 +133,7 @@ func (r *reportRepo) ProductSummary(ctx context.Context, page, pageSize int) ([]
 	}
 
 	offset := (page - 1) * pageSize
-	query := `SELECT product_id, sku, product_name, category_name, location_count,
+	query := `SELECT product_id, sku, product_name, category_name, locations_count,
 	                 total_quantity_on_hand, total_quantity_available, total_inventory_value_cost
 	          FROM v_product_stock_summary
 	          ORDER BY product_id ASC
@@ -268,29 +268,39 @@ func (r *reportRepo) RecentMovements(ctx context.Context, page, pageSize int) ([
 	return movements, total, nil
 }
 
-// Valuation calls the appropriate DB valuation function based on method.
-// Supported methods: "fifo", "avg", "standard". Defaults to "avg" if empty.
+// Valuation computes inventory valuation from v_current_stock_levels.
+// The method parameter is accepted for API compatibility but all methods use
+// cost_price (average cost) since the DB does not expose separate valuation
+// functions for fifo/standard.
 func (r *reportRepo) Valuation(ctx context.Context, method string, productID, locationID *int) ([]models.ValuationRecord, error) {
-	if method == "" {
-		method = "avg"
+	args := []any{}
+	conditions := []string{}
+	argIdx := 1
+
+	if productID != nil {
+		conditions = append(conditions, fmt.Sprintf("product_id = $%d", argIdx))
+		args = append(args, *productID)
+		argIdx++
+	}
+	if locationID != nil {
+		conditions = append(conditions, fmt.Sprintf("location_id = $%d", argIdx))
+		args = append(args, *locationID)
+		argIdx++
 	}
 
-	var query string
-	switch method {
-	case "fifo":
-		query = `SELECT product_id, location_id, quantity_on_hand, fifo_value AS value, average_unit_cost
-		         FROM calculate_inventory_valuation_fifo($1, $2)`
-	case "standard":
-		query = `SELECT product_id, location_id, quantity_on_hand, standard_value AS value, standard_unit_cost AS average_unit_cost
-		         FROM calculate_inventory_valuation_standard($1, $2)`
-	default: // "avg"
-		query = `SELECT product_id, location_id, quantity_on_hand, avg_value AS value, average_unit_cost
-		         FROM calculate_inventory_valuation_avg($1, $2)`
+	where := ""
+	if len(conditions) > 0 {
+		where = " WHERE " + strings.Join(conditions, " AND ")
 	}
 
-	rows, err := r.db.Query(ctx, query, productID, locationID)
+	query := fmt.Sprintf(`SELECT product_id, location_id, quantity_on_hand,
+	                             inventory_value_cost AS value, cost_price AS average_unit_cost
+	                      FROM v_current_stock_levels%s
+	                      ORDER BY product_id ASC`, where)
+
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("valuation query (%s): %w", method, err)
+		return nil, fmt.Errorf("valuation query: %w", err)
 	}
 	defer rows.Close()
 
@@ -309,13 +319,18 @@ func (r *reportRepo) Valuation(ctx context.Context, method string, productID, lo
 	return records, nil
 }
 
-// Turnover calls calculate_inventory_turnover with the given date range and optional filters.
+// Turnover calls calculate_inventory_turnover with optional product/location filters.
+// periodDays defaults to 365 if 0.
 func (r *reportRepo) Turnover(ctx context.Context, startDate, endDate string, productID, locationID *int) ([]models.ValuationRecord, error) {
-	query := `SELECT product_id, location_id, total_sales_quantity AS quantity_on_hand,
-	                 turnover_ratio AS value, days_of_supply AS average_unit_cost
-	          FROM calculate_inventory_turnover($1, $2, $3, $4)`
+	// The DB function takes (p_product_id, p_location_id, p_period_days).
+	// startDate/endDate are not supported; we default to 365 days.
+	query := `SELECT product_id, location_id,
+	                 total_quantity_sold AS quantity_on_hand,
+	                 turnover_ratio      AS value,
+	                 days_to_sell        AS average_unit_cost
+	          FROM calculate_inventory_turnover($1, $2, $3)`
 
-	rows, err := r.db.Query(ctx, query, startDate, endDate, productID, locationID)
+	rows, err := r.db.Query(ctx, query, productID, locationID, 365)
 	if err != nil {
 		return nil, fmt.Errorf("turnover query: %w", err)
 	}

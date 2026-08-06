@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -14,11 +12,46 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ../schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
       - ../inventory_procedures.sql:/docker-entrypoint-initdb.d/02-procedures.sql
+      - ../inventory_reporting.sql:/docker-entrypoint-initdb.d/03-reporting.sql
+      - ../fix_trigger.sql:/docker-entrypoint-initdb.d/04-fix-trigger.sql
+      - ../load_sample_data.sql:/docker-entrypoint-initdb.d/05-data.sql
+      - ../sample_data.sql:/sample_data.sql
+      - ../sample_data_movements.sql:/sample_data_movements.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U inventory_user -d inventory_management"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: inventory_backend
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://inventory_user:inventory_pass@postgres:5432/inventory_management
+      PORT: "8080"
+      JWT_SECRET: ${JWT_SECRET:-changeme}
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        API_BASE_URL: http://localhost:8080
+    container_name: inventory_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
 
 volumes:
   postgres_data:

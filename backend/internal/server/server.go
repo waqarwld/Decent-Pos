@@ -83,7 +83,6 @@ func (s *Server) registerRoutes() {
 	// Build repos → services → handlers
 	productRepo := repository.NewProductRepository(s.db)
 	productSvc := services.NewProductService(productRepo)
-	productH := handlers.NewProductHandler(productSvc)
 
 	categoryRepo := repository.NewCategoryRepository(s.db)
 	categorySvc := services.NewCategoryService(categoryRepo)
@@ -97,13 +96,28 @@ func (s *Server) registerRoutes() {
 	supplierSvc := services.NewSupplierService(supplierRepo)
 	supplierH := handlers.NewSupplierHandler(supplierSvc)
 
+	customerRepo := repository.NewCustomerRepository(s.db)
+	customerSvc := services.NewCustomerService(customerRepo)
+	customerH := handlers.NewCustomerHandler(customerSvc)
+
+	saleRepo := repository.NewSaleRepository(s.db)
+	saleSvc := services.NewSaleService(saleRepo)
+	saleH := handlers.NewSaleHandler(saleSvc)
+
 	inventoryRepo := repository.NewInventoryRepository(s.db)
 	inventorySvc := services.NewInventoryService(inventoryRepo)
 	inventoryH := handlers.NewInventoryHandler(inventorySvc)
 
+	productH := handlers.NewProductHandler(productSvc, inventorySvc)
+
 	reportRepo := repository.NewReportRepository(s.db)
 	reportSvc := services.NewReportService(reportRepo)
 	reportH := handlers.NewReportHandler(reportSvc)
+
+	authH := handlers.NewAuthHandler(s.cfg.JWTSecret)
+
+	// Unprotected API routes (login must be accessible without a token)
+	r.Post("/api/v1/auth/login", authH.Login)
 
 	// Protected API group — all routes require a valid JWT
 	r.Group(func(r chi.Router) {
@@ -135,6 +149,19 @@ func (s *Server) registerRoutes() {
 			r.Post("/suppliers", supplierH.Create)
 			r.Get("/suppliers/{id}", supplierH.Get)
 			r.Put("/suppliers/{id}", supplierH.Update)
+
+			// Customers
+			r.Get("/customers", customerH.List)
+			r.Post("/customers", customerH.Create)
+			r.Get("/customers/{id}", customerH.Get)
+			r.Put("/customers/{id}", customerH.Update)
+			r.Get("/customers/{id}/purchases", saleH.Purchases)
+
+			// Sales and returns
+			r.Get("/sales", saleH.List)
+			r.Post("/sales", saleH.Create)
+			r.Get("/sales/{id}", saleH.Get)
+			r.Post("/sales/{id}/returns", saleH.CreateReturn)
 
 			// Inventory operations
 			r.Post("/inventory/receive", inventoryH.Receive)

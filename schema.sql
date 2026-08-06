@@ -36,6 +36,7 @@ CREATE TABLE products (
     height_cm DECIMAL(8,2),
     cost_price DECIMAL(12,2),
     selling_price DECIMAL(12,2),
+    wholesale_price DECIMAL(12,2),
     status VARCHAR(20) DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -142,8 +143,8 @@ CREATE TABLE product_suppliers (
     
     -- Performance tracking fields
     average_delivery_days DECIMAL(5,2),
-    on_time_delivery_rate DECIMAL(5,4), -- Percentage as decimal (0.95 = 95%)
-    quality_rating DECIMAL(3,2), -- Rating out of 5.00
+    on_time_delivery_rate DECIMAL(5,4),
+    quality_rating DECIMAL(3,2),
     total_orders INTEGER DEFAULT 0,
     total_delivered INTEGER DEFAULT 0,
     last_order_date DATE,
@@ -221,10 +222,7 @@ COMMENT ON COLUMN products.sku IS 'Stock Keeping Unit - unique product identifie
 COMMENT ON COLUMN products.status IS 'Product lifecycle status: active, discontinued, pending';
 COMMENT ON COLUMN locations.location_type IS 'Type of location: warehouse, zone, aisle, bin, etc.';
 COMMENT ON COLUMN locations.parent_location_id IS 'Self-reference for hierarchical location structure';
-COMMENT ON COLUMN suppliers.payment_terms IS 'Payment terms and conditions for this supplier';$'
- 
-   )
-);
+COMMENT ON COLUMN suppliers.payment_terms IS 'Payment terms and conditions for this supplier';
 
 -- =============================================================================
 -- STOCK MANAGEMENT TABLES
@@ -321,7 +319,7 @@ CREATE INDEX idx_reorder_settings_active ON reorder_settings(is_active) WHERE is
 
 -- Function to update stock levels from inventory movements
 CREATE OR REPLACE FUNCTION update_stock_levels()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
     -- Get the quantity adjustment based on movement type
     DECLARE
@@ -343,7 +341,7 @@ BEGIN
         RETURN NEW;
     END;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Trigger to automatically update stock levels when movements are inserted
 CREATE TRIGGER trigger_update_stock_levels
@@ -388,3 +386,120 @@ COMMENT ON COLUMN product_suppliers.on_time_delivery_rate IS 'Percentage of orde
 COMMENT ON COLUMN product_suppliers.quality_rating IS 'Quality rating from 0.0 to 5.0 based on received goods';
 COMMENT ON COLUMN product_suppliers.total_orders IS 'Total number of orders placed with this supplier for this product';
 COMMENT ON COLUMN product_suppliers.total_delivered IS 'Total number of orders successfully delivered';
+
+-- =============================================================================
+-- CUSTOMERS, SALES AND RETURNS
+-- =============================================================================
+
+-- Customers — retail and wholesale accounts
+CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(200) NOT NULL,
+    email VARCHAR(100),
+    phone VARCHAR(30),
+    address TEXT,
+    customer_type VARCHAR(20) NOT NULL DEFAULT 'retail',
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Constraints
+    CONSTRAINT customers_code_not_empty CHECK (LENGTH(TRIM(code)) > 0),
+    CONSTRAINT customers_name_not_empty CHECK (LENGTH(TRIM(name)) > 0),
+    CONSTRAINT customers_type_valid CHECK (customer_type IN ('wholesale', 'retail')),
+    CONSTRAINT customers_email_format CHECK (
+        email IS NULL OR
+        email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+    )
+);
+
+-- Sale headers — one row per completed checkout
+CREATE TABLE sales (
+    sale_id SERIAL PRIMARY KEY,
+    sale_number VARCHAR(30) UNIQUE NOT NULL,
+    customer_id INTEGER REFERENCES customers(customer_id),
+    location_id INTEGER NOT NULL REFERENCES locations(location_id),
+    subtotal DECIMAL(12,2) NOT NULL,
+    discount DECIMAL(12,2) NOT NULL DEFAULT 0,
+    total DECIMAL(12,2) NOT NULL,
+    payment_method VARCHAR(20) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'completed',
+    created_by VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Constraints
+    CONSTRAINT sales_number_not_empty CHECK (LENGTH(TRIM(sale_number)) > 0),
+    CONSTRAINT sales_amounts_positive CHECK (subtotal >= 0 AND discount >= 0 AND total >= 0),
+    CONSTRAINT sales_method_valid CHECK (payment_method IN ('cash', 'card', 'split', 'other')),
+    CONSTRAINT sales_status_valid CHECK (status IN ('completed', 'partially_refunded', 'refunded'))
+);
+
+-- Sale line items
+CREATE TABLE sale_items (
+    sale_item_id SERIAL PRIMARY KEY,
+    sale_id INTEGER NOT NULL REFERENCES sales(sale_id),
+    product_id INTEGER NOT NULL REFERENCES products(product_id),
+    quantity INTEGER NOT NULL,
+    unit_price DECIMAL(12,2) NOT NULL,
+    line_total DECIMAL(12,2) NOT NULL,
+    returned_qty INTEGER NOT NULL DEFAULT 0,
+
+    -- Constraints
+    CONSTRAINT sale_items_quantity_positive CHECK (quantity > 0),
+    CONSTRAINT sale_items_prices_positive CHECK (unit_price >= 0 AND line_total >= 0),
+    CONSTRAINT sale_items_returned_valid CHECK (returned_qty >= 0 AND returned_qty <= quantity)
+);
+
+-- Return records (restock + refund) linked back to a sale
+CREATE TABLE returns (
+    return_id SERIAL PRIMARY KEY,
+    sale_id INTEGER NOT NULL REFERENCES sales(sale_id),
+    sale_item_id INTEGER NOT NULL REFERENCES sale_items(sale_item_id),
+    product_id INTEGER NOT NULL REFERENCES products(product_id),
+    customer_id INTEGER REFERENCES customers(customer_id),
+    quantity INTEGER NOT NULL,
+    refund_amount DECIMAL(12,2) NOT NULL,
+    reason TEXT,
+    created_by VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Constraints
+    CONSTRAINT returns_quantity_positive CHECK (quantity > 0),
+    CONSTRAINT returns_refund_positive CHECK (refund_amount >= 0)
+);
+
+-- Customers indexes
+CREATE INDEX idx_customers_name ON customers(name);
+CREATE INDEX idx_customers_type ON customers(customer_type);
+CREATE INDEX idx_customers_active ON customers(is_active) WHERE is_active = true;
+
+-- Sales indexes
+CREATE INDEX idx_sales_customer ON sales(customer_id);
+CREATE INDEX idx_sales_date ON sales(created_at);
+
+-- Sale items indexes
+CREATE INDEX idx_sale_items_sale ON sale_items(sale_id);
+CREATE INDEX idx_sale_items_product ON sale_items(product_id);
+
+-- Returns indexes
+CREATE INDEX idx_returns_sale ON returns(sale_id);
+CREATE INDEX idx_returns_customer ON returns(customer_id);
+
+-- updated_at trigger for customers
+CREATE TRIGGER trigger_customers_updated_at
+    BEFORE UPDATE ON customers
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Table comments
+COMMENT ON TABLE customers IS 'Customer accounts (wholesale or retail) with purchase history';
+COMMENT ON TABLE sales IS 'Sale headers, one row per completed checkout';
+COMMENT ON TABLE sale_items IS 'Line items belonging to a sale';
+COMMENT ON TABLE returns IS 'Returns (restock + refund) linked back to an original sale';
+
+-- Key column comments
+COMMENT ON COLUMN products.wholesale_price IS 'Price charged to wholesale customers (falls back to selling_price when NULL)';
+COMMENT ON COLUMN customers.customer_type IS 'Customer classification: wholesale or retail (default retail)';
+COMMENT ON COLUMN sales.status IS 'Sale lifecycle status: completed, partially_refunded, refunded';
+COMMENT ON COLUMN sale_items.returned_qty IS 'Quantity already returned for this line (bounded by quantity)';

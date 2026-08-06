@@ -43,3 +43,10 @@ type MovementFilter struct {
 	FromDate       *time.Time
 	ToDate         *time.Time
 }
+
+// CustomerPurchases is the response for a customer's purchase history.
+type CustomerPurchases struct {
+	CustomerID   int    `json:"customer_id"`
+	CustomerName string `json:"customer_name"`
+	Sales        []Sale `json:"sales"`
+}

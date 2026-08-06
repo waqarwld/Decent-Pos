@@ -1,0 +1,9 @@
+*.exe
+.git
+.gitignore
+node_modules
+npm-debug.log
+dist
+build
+*.log
+.DS_Store

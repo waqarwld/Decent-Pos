@@ -1,0 +1,307 @@
+# Implementation Plan: POS Frontend
+
+## Overview
+
+Implement an Angular 17+ SPA for a Point of Sale system with JWT authentication, a cashier-facing POS interface, a full admin section, and Docker/Nginx packaging. Tasks are ordered from project scaffold through feature implementation to containerization.
+
+## Tasks
+
+- [x] 1. Scaffold Angular project and configure core infrastructure
+  - Generate Angular 17+ standalone project: `ng new pos-frontend --standalone --routing --style=css`
+  - Install dependencies: `tailwindcss`, `fast-check`
+  - Configure `tailwind.config.js` and import Tailwind in `styles.css`
+  - Create `src/environments/environment.ts` and `src/environments/environment.prod.ts` with `apiBaseUrl` field (prod uses `__API_BASE_URL__` placeholder)
+  - Define all TypeScript interfaces from the design in `src/app/core/models/` (auth, product, category, location, supplier, inventory, transaction, reports, pagination, api-error)
+  - _Requirements: 10.4_
+
+- [x] 2. Implement authentication service and HTTP interceptor
+  - [x] 2.1 Implement `AuthService` in `src/app/core/services/auth.service.ts`
+    - `login(req: LoginRequest)`: POST `/api/v1/auth/login`, store token in `sessionStorage`, return observable
+    - `logout()`: clear `sessionStorage`, navigate to `/login`
+    - `restoreSession()`: read token from `sessionStorage` on app init
+    - `isAuthenticated()`: signal/computed returning boolean based on token presence
+    - `getToken()`: return current token string or null
+    - _Requirements: 1.2, 1.4, 1.6_
+  - [x] 2.2 Write unit tests for `AuthService`
+    - Test login stores token and emits authenticated state
+    - Test logout clears token and navigates to `/login`
+    - Test `restoreSession` rehydrates state from `sessionStorage`
+    - _Requirements: 1.2, 1.4, 1.6_
+  - [x] 2.3 Implement `AuthInterceptor` in `src/app/core/interceptors/auth.interceptor.ts`
+    - Clone request and attach `Authorization: Bearer <token>` header for all `/api/v1/*` URLs
+    - On 401 response: call `AuthService.logout()` to clear token and redirect
+    - Register interceptor in `app.config.ts` via `provideHttpClient(withInterceptors([authInterceptor]))`
+    - _Requirements: 1.5, 1.7_
+  - [x] 2.4 Write property test for `AuthInterceptor` — Property 2: JWT attached to all /api/v1/* requests
+    - **Property 2: JWT attached to all /api/v1/* requests**
+    - **Validates: Requirements 1.7**
+    - _Requirements: 1.7_
+  - [x] 2.5 Write property test for `AuthInterceptor` — Property 3: 401 response clears token and redirects
+    - **Property 3: 401 response clears token and redirects to login**
+    - **Validates: Requirements 1.5**
+    - _Requirements: 1.5_
+
+- [x] 3. Implement `AuthGuard` and routing skeleton
+  - [x] 3.1 Implement `AuthGuard` in `src/app/core/guards/auth.guard.ts`
+    - `canActivate`: return true if `AuthService.isAuthenticated()`, else `router.createUrlTree(['/login'])`
+    - _Requirements: 9.3_
+  - [ ]* 3.2 Write property test for `AuthGuard` — Property 1: Auth guard redirects unauthenticated users
+    - **Property 1: Auth guard redirects unauthenticated users**
+    - **Validates: Requirements 1.1, 9.3**
+    - _Requirements: 1.1, 9.3_
+  - [x] 3.3 Configure `app.routes.ts` with full routing structure from the design
+    - `/login` → `LoginComponent` (public)
+    - `/pos` → `PosShellComponent` (guarded)
+    - `/admin` → `AdminShellComponent` (guarded) with all child routes as lazy-loaded chunks
+    - Redirect `/` → `/pos`
+    - _Requirements: 9.1, 9.3_
+
+- [x] 4. Implement `LoginComponent` and `AppComponent` shell
+  - [x] 4.1 Implement `LoginComponent` in `src/app/features/auth/login/login.component.ts`
+    - Reactive form with `username` and `password` controls (both required)
+    - On submit: call `AuthService.login()`, navigate to `/pos` on success
+    - On error: display safe error message (no stack traces or internal details)
+    - _Requirements: 1.1, 1.2, 1.3_
+  - [x] 4.2 Write property test for `LoginComponent` — Property 4: Invalid credentials show safe error message
+    - **Property 4: Invalid credentials show safe error message**
+    - **Validates: Requirements 1.3**
+    - _Requirements: 1.3_
+  - [x] 4.3 Implement `AppComponent` with `RouterOutlet` and session restore on init
+    - Call `AuthService.restoreSession()` in `APP_INITIALIZER` or `ngOnInit`
+    - _Requirements: 1.4_
+
+- [x] 5. Implement shared navigation components and `ApiHealthService`
+  - [x] 5.1 Implement `ApiHealthService` in `src/app/core/services/api-health.service.ts`
+    - Poll `GET /health` on startup; expose `isConnected` signal
+    - _Requirements: 9.5_
+  - [x] 5.2 Implement `TopNavComponent` in `src/app/shared/components/top-nav/`
+    - Show links to `/pos` and `/admin`; show logout button when authenticated
+    - Show connectivity warning banner when `ApiHealthService.isConnected` is false
+    - Render only when `AuthService.isAuthenticated()` is true
+    - _Requirements: 9.2, 9.5_
+  - [ ]* 5.3 Write property test for nav bar visibility — Property 15: Nav bar visible only when authenticated
+    - **Property 15: Nav bar visible only when authenticated**
+    - **Validates: Requirements 9.2**
+    - _Requirements: 9.2_
+  - [x] 5.4 Implement `SidebarNavComponent` in `src/app/shared/components/sidebar-nav/`
+    - Links to `/admin/products`, `/admin/categories`, `/admin/locations`, `/admin/suppliers`, `/admin/inventory`, `/admin/reports`
+    - _Requirements: 9.4_
+
+- [x] 6. Checkpoint — Ensure routing, auth, and navigation compile and tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 7. Implement `TransactionService` and POS shell
+  - [x] 7.1 Implement `TransactionService` in `src/app/core/services/transaction.service.ts`
+    - In-memory signal-based state: `items: TransactionItem[]`, computed `total: number`
+    - `addProduct(product)`: add with qty 1, or increment if already present
+    - `increment(productId)`, `decrement(productId)` (remove at 0), `remove(productId)`
+    - `submit(locationId)`: POST to `/api/v1/inventory/ship` for each item; on any error preserve state and surface error
+    - `clear()`: reset items after successful submission
+    - _Requirements: 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
+  - [x] 7.2 Write property test for `TransactionService` — Property 6: Transaction item management
+    - **Property 6: Transaction item management**
+    - **Validates: Requirements 2.3, 2.4**
+    - _Requirements: 2.3, 2.4_
+  - [x] 7.3 Write property test for `TransactionService` — Property 7: Running total invariant
+    - **Property 7: Running total invariant**
+    - **Validates: Requirements 2.5**
+    - _Requirements: 2.5_
+  - [x] 7.4 Write property test for `TransactionService` — Property 8: Transaction submission calls ship per line item
+    - **Property 8: Transaction submission calls ship per line item**
+    - **Validates: Requirements 2.6**
+    - _Requirements: 2.6_
+  - [x] 7.5 Write property test for `TransactionService` — Property 9: API error preserves transaction state
+    - **Property 9: API error preserves transaction state**
+    - **Validates: Requirements 2.8**
+    - _Requirements: 2.8_
+
+- [x] 8. Implement POS interface components
+  - [x] 8.1 Implement `ProductService` in `src/app/core/services/product.service.ts`
+    - `search(query)`: GET `/api/v1/products?search=<query>`
+    - `getAll(page, pageSize)`: GET `/api/v1/products` with pagination params
+    - `getBySku(sku)`: GET `/api/v1/products/sku/{sku}`
+    - `create(req)`, `update(id, req)`, `delete(id)`
+    - _Requirements: 2.2, 3.1, 3.2, 3.3, 3.4, 3.5_
+  - [x] 8.2 Implement `ProductSearchComponent` in `src/app/features/pos/product-search/`
+    - Debounced search input (500ms) calling `ProductService.search()`
+    - Display results list; emit selected product to parent
+    - _Requirements: 2.1, 2.2_
+  - [ ]* 8.3 Write property test for `ProductSearchComponent` — Property 5: Product search is debounced
+    - **Property 5: Product search is debounced**
+    - **Validates: Requirements 2.2**
+    - _Requirements: 2.2_
+  - [x] 8.4 Implement `TransactionItemComponent` in `src/app/features/pos/transaction-item/`
+    - Display product name, unit price, quantity controls (+/−/remove), line total
+    - Emit increment/decrement/remove events to parent
+    - _Requirements: 2.4_
+  - [x] 8.5 Implement `TransactionPanelComponent` in `src/app/features/pos/transaction-panel/`
+    - List of `TransactionItemComponent` instances from `TransactionService.items`
+    - Display running total from `TransactionService.total`
+    - "Complete Transaction" button: call `TransactionService.submit()`; show confirmation on success, error message on failure
+    - _Requirements: 2.1, 2.5, 2.7, 2.8_
+  - [x] 8.6 Implement `PosShellComponent` in `src/app/features/pos/pos-shell/`
+    - Compose `TopNavComponent`, `ProductSearchComponent`, `TransactionPanelComponent`
+    - Wire product selection from search to `TransactionService.addProduct()`
+    - _Requirements: 2.1, 2.3_
+
+- [x] 9. Checkpoint — Ensure POS interface works end-to-end and all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 10. Implement admin CRUD services
+  - [x] 10.1 Implement `CategoryService` in `src/app/core/services/category.service.ts`
+    - `getAll()`: GET `/api/v1/categories`
+    - `create(req)`, `update(id, req)`
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 10.2 Implement `LocationService` in `src/app/core/services/location.service.ts`
+    - `getAll()`: GET `/api/v1/locations`
+    - `create(req)`, `update(id, req)`
+    - _Requirements: 5.1, 5.2, 5.3_
+  - [x] 10.3 Implement `SupplierService` in `src/app/core/services/supplier.service.ts`
+    - `getAll()`: GET `/api/v1/suppliers`
+    - `create(req)`, `update(id, req)`
+    - _Requirements: 6.1, 6.2, 6.3_
+  - [x] 10.4 Implement `InventoryService` in `src/app/core/services/inventory.service.ts`
+    - `getMovements()`: GET `/api/v1/inventory/movements`
+    - `receive(req)`, `ship(req)`, `transfer(req)`, `adjust(req)`
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+
+- [x] 11. Implement product admin components
+  - [x] 11.1 Implement `ProductListComponent` in `src/app/features/admin/products/product-list/`
+    - Paginated table of products from `ProductService.getAll()`
+    - SKU search input calling `ProductService.getBySku()`; show "Product not found" on 404
+    - Delete button per row: show confirmation dialog before calling `ProductService.delete()`
+    - Links to create and edit routes
+    - _Requirements: 3.1, 3.4, 3.5, 3.6_
+  - [ ]* 11.2 Write property test for delete confirmation — Property 12: Delete requires confirmation before dispatching DELETE
+    - **Property 12: Delete requires confirmation before dispatching DELETE**
+    - **Validates: Requirements 3.4**
+    - _Requirements: 3.4_
+  - [x] 11.3 Implement `ProductFormComponent` in `src/app/features/admin/products/product-form/`
+    - Reactive form: `sku` (required), `name` (required), `price` (required), `description`, `category_id`
+    - Create mode: POST via `ProductService.create()`; edit mode: PUT via `ProductService.update()`
+    - Inline validation errors; disable submit when form invalid
+    - _Requirements: 3.2, 3.3, 3.7_
+  - [x] 11.4 Write property test for `ProductFormComponent` — Property 10: Required field validation prevents form submission
+    - **Property 10: Required field validation prevents form submission**
+    - **Validates: Requirements 3.7**
+    - _Requirements: 3.7_
+  - [x] 11.5 Write property test for `ProductFormComponent` — Property 11: CRUD forms dispatch correct HTTP method and URL
+    - **Property 11: CRUD forms dispatch correct HTTP method and URL**
+    - **Validates: Requirements 3.2, 3.3**
+    - _Requirements: 3.2, 3.3_
+
+- [x] 12. Implement category, location, and supplier admin components
+  - [x] 12.1 Implement `CategoryListComponent` and `CategoryFormComponent` in `src/app/features/admin/categories/`
+    - List: display all categories from `CategoryService.getAll()`; links to create/edit
+    - Form: `name` (required), `description`; create → POST, edit → PUT; inline validation
+    - _Requirements: 4.1, 4.2, 4.3, 4.4_
+  - [ ]* 12.2 Write property tests for category form — Property 10 (category) and Property 11 (category)
+    - **Property 10: Required field validation prevents form submission (category)**
+    - **Property 11: CRUD forms dispatch correct HTTP method and URL (category)**
+    - **Validates: Requirements 4.2, 4.3, 4.4**
+    - _Requirements: 4.2, 4.3, 4.4_
+  - [x] 12.3 Implement `LocationListComponent` and `LocationFormComponent` in `src/app/features/admin/locations/`
+    - List: display all locations from `LocationService.getAll()`; links to create/edit
+    - Form: `name` (required), `description`; create → POST, edit → PUT; inline validation
+    - _Requirements: 5.1, 5.2, 5.3, 5.4_
+  - [ ]* 12.4 Write property tests for location form — Property 10 (location) and Property 11 (location)
+    - **Property 10: Required field validation prevents form submission (location)**
+    - **Property 11: CRUD forms dispatch correct HTTP method and URL (location)**
+    - **Validates: Requirements 5.2, 5.3, 5.4**
+    - _Requirements: 5.2, 5.3, 5.4_
+  - [x] 12.5 Implement `SupplierListComponent` and `SupplierFormComponent` in `src/app/features/admin/suppliers/`
+    - List: display all suppliers from `SupplierService.getAll()`; links to create/edit
+    - Form: `name` (required), `contact_info`; create → POST, edit → PUT; inline validation
+    - _Requirements: 6.1, 6.2, 6.3, 6.4_
+  - [ ]* 12.6 Write property tests for supplier form — Property 10 (supplier) and Property 11 (supplier)
+    - **Property 10: Required field validation prevents form submission (supplier)**
+    - **Property 11: CRUD forms dispatch correct HTTP method and URL (supplier)**
+    - **Validates: Requirements 6.2, 6.3, 6.4**
+    - _Requirements: 6.2, 6.3, 6.4_
+
+- [x] 13. Checkpoint — Ensure all admin CRUD components compile and tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 14. Implement inventory movement components
+  - [x] 14.1 Implement `InventoryListComponent` in `src/app/features/admin/inventory/inventory-list/`
+    - Display recent movements from `InventoryService.getMovements()`
+    - Links to receive, ship, transfer, adjust forms
+    - _Requirements: 7.1_
+  - [x] 14.2 Implement `ReceiveFormComponent` in `src/app/features/admin/inventory/receive-form/`
+    - Reactive form: `product_id`, `location_id`, `quantity`, `supplier_id` (all required)
+    - Submit → POST via `InventoryService.receive()`; display API error on failure
+    - _Requirements: 7.2, 7.6, 7.7_
+  - [x] 14.3 Implement `ShipFormComponent` in `src/app/features/admin/inventory/ship-form/`
+    - Reactive form: `product_id`, `location_id`, `quantity` (all required)
+    - Submit → POST via `InventoryService.ship()`; display API error on failure
+    - _Requirements: 7.3, 7.6, 7.7_
+  - [x] 14.4 Implement `TransferFormComponent` in `src/app/features/admin/inventory/transfer-form/`
+    - Reactive form: `product_id`, `source_location_id`, `destination_location_id`, `quantity` (all required)
+    - Submit → POST via `InventoryService.transfer()`; display API error on failure
+    - _Requirements: 7.4, 7.6, 7.7_
+  - [x] 14.5 Implement `AdjustFormComponent` in `src/app/features/admin/inventory/adjust-form/`
+    - Reactive form: `product_id`, `location_id`, `quantity_delta`, `reason` (all required)
+    - Submit → POST via `InventoryService.adjust()`; display API error on failure
+    - _Requirements: 7.5, 7.6, 7.7_
+  - [ ]* 14.6 Write property test for movement forms — Property 10: Required field validation prevents form submission (movements)
+    - **Property 10: Required field validation prevents form submission (movements)**
+    - **Validates: Requirements 7.6**
+    - _Requirements: 7.6_
+  - [ ]* 14.7 Write property test for movement forms — Property 13: Movement forms dispatch correct endpoint with required fields
+    - **Property 13: Movement forms dispatch correct endpoint with required fields**
+    - **Validates: Requirements 7.2, 7.3, 7.4, 7.5**
+    - _Requirements: 7.2, 7.3, 7.4, 7.5_
+
+- [x] 15. Implement `ReportService` and all report components
+  - [x] 15.1 Implement `ReportService` in `src/app/core/services/report.service.ts`
+    - `getSummary()`: GET `/api/v1/reports/stock/summary`
+    - `getStock()`: GET `/api/v1/reports/stock`
+    - `getAlerts()`: GET `/api/v1/reports/stock/alerts`
+    - `getValuation()`: GET `/api/v1/reports/valuation`
+    - `getTurnover()`: GET `/api/v1/reports/turnover`
+    - `getSupplierPerformance()`: GET `/api/v1/reports/suppliers/performance`
+    - `getRecentMovements()`: GET `/api/v1/reports/movements/recent`
+    - `getAging()`: GET `/api/v1/reports/stock/aging`
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8_
+  - [x] 15.2 Implement `ReportsDashboardComponent` in `src/app/features/admin/reports/reports-dashboard/`
+    - Display summary card data from `ReportService.getSummary()` (total products, total value, low stock count)
+    - Links to all sub-report views
+    - _Requirements: 8.1_
+  - [x] 15.3 Implement individual report components: `StockReportComponent`, `AlertsReportComponent`, `ValuationReportComponent`, `TurnoverReportComponent`, `SupplierPerformanceComponent`, `RecentMovementsComponent`, `AgingReportComponent`
+    - Each calls its corresponding `ReportService` method on `ngOnInit`
+    - Display data in a table; highlight low-stock rows in `AlertsReportComponent`
+    - _Requirements: 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8_
+  - [ ]* 15.4 Write property test for report components — Property 14: Report navigation calls correct API endpoint
+    - **Property 14: Report navigation calls correct API endpoint**
+    - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8**
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8_
+
+- [x] 16. Implement `AdminShellComponent` and wire all admin routes
+  - Compose `TopNavComponent`, `SidebarNavComponent`, and `RouterOutlet` for child routes
+  - Ensure all lazy-loaded admin feature chunks are correctly referenced in `app.routes.ts`
+  - _Requirements: 9.1, 9.4_
+
+- [x] 17. Checkpoint — Ensure full application compiles, all routes resolve, and all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 18. Add Docker and Nginx configuration
+  - [x] 18.1 Create `Dockerfile` at project root using the multi-stage build from the design
+    - Stage 1: `node:20-alpine` — `npm ci`, inject `API_BASE_URL` build arg into `environment.prod.ts`, `npm run build --configuration production`
+    - Stage 2: `nginx:alpine` — copy `dist/pos-frontend/browser` to `/usr/share/nginx/html`, copy `nginx.conf`
+    - `EXPOSE 80`
+    - _Requirements: 10.1, 10.2, 10.3, 10.4_
+  - [x] 18.2 Create `nginx.conf` at project root
+    - `try_files $uri $uri/ /index.html` for SPA routing support
+    - Proxy `/api/` to `http://api:8080`
+    - _Requirements: 10.5_
+
+- [x] 19. Final checkpoint — Verify Docker build and all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+## Notes
+
+- Tasks marked with `*` are optional and can be skipped for a faster MVP
+- Each task references specific requirements for traceability
+- Property tests use `fast-check` with `{ numRuns: 100 }` and must include the comment tag `// Feature: pos-frontend, Property <N>: <property_text>`
+- All HTTP errors are handled via `catchError` in service methods; components never display raw error objects
+- Standalone components (no NgModules) throughout; lazy-loaded feature chunks per route group

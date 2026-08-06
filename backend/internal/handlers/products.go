@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 
+	"inventory-api/internal/middleware"
 	"inventory-api/internal/models"
 	"inventory-api/internal/repository"
 	"inventory-api/internal/services"
@@ -17,13 +18,15 @@ import (
 // ProductHandler handles HTTP requests for the products resource.
 type ProductHandler struct {
 	svc      services.ProductService
+	invSvc   services.InventoryService
 	validate *validator.Validate
 }
 
 // NewProductHandler returns a new ProductHandler.
-func NewProductHandler(svc services.ProductService) *ProductHandler {
+func NewProductHandler(svc services.ProductService, invSvc services.InventoryService) *ProductHandler {
 	return &ProductHandler{
 		svc:      svc,
+		invSvc:   invSvc,
 		validate: validator.New(),
 	}
 }
@@ -119,6 +122,20 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 		respondError(w, http.StatusInternalServerError, "internal server error")
 		return
+	}
+
+	// If initial quantity + location were provided, receive stock automatically
+	if req.InitialQuantity != nil && req.InitialLocationID != nil && *req.InitialQuantity > 0 {
+		invReq := models.ReceiveRequest{
+			ProductID:         product.ProductID,
+			LocationID:        *req.InitialLocationID,
+			Quantity:          *req.InitialQuantity,
+			UnitCost:          0,
+			ReferenceDocument: nil,
+			Notes:             nil,
+		}
+		createdBy := middleware.GetUserFromContext(r.Context())
+		_, _ = h.invSvc.Receive(r.Context(), invReq, createdBy)
 	}
 
 	respondJSON(w, http.StatusCreated, product)

@@ -8,12 +8,11 @@ import (
 	"inventory-api/internal/models"
 )
 
-// respondJSON writes a JSON response with the given status code, wrapping data
-// in the standard {"data": ...} envelope.
+// respondJSON writes a JSON response with the given status code.
 func respondJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]any{"data": data})
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 // respondError writes a JSON error response with the given status code, using

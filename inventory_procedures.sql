@@ -8,32 +8,32 @@
 
 -- Function to validate product exists and is active
 CREATE OR REPLACE FUNCTION validate_product(p_product_id INTEGER)
-RETURNS BOOLEAN AS $
+RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1 FROM products 
         WHERE product_id = p_product_id AND status = 'active'
     );
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Function to validate location exists and is active
 CREATE OR REPLACE FUNCTION validate_location(p_location_id INTEGER)
-RETURNS BOOLEAN AS $
+RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1 FROM locations 
         WHERE location_id = p_location_id AND is_active = true
     );
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Function to get current stock quantity
 CREATE OR REPLACE FUNCTION get_stock_quantity(
     p_product_id INTEGER,
     p_location_id INTEGER
 )
-RETURNS INTEGER AS $
+RETURNS INTEGER AS $$
 DECLARE
     v_quantity INTEGER;
 BEGIN
@@ -43,7 +43,7 @@ BEGIN
     
     RETURN COALESCE(v_quantity, 0);
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- =============================================================================
 -- RECEIVE INVENTORY PROCEDURE
@@ -63,7 +63,7 @@ RETURNS TABLE(
     message TEXT,
     movement_id INTEGER,
     new_stock_level INTEGER
-) AS $
+) AS $$
 DECLARE
     v_movement_id INTEGER;
     v_new_stock INTEGER;
@@ -146,7 +146,7 @@ EXCEPTION
             NULL::INTEGER, 
             NULL::INTEGER;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- =============================================================================
 -- SHIP INVENTORY PROCEDURE
@@ -166,7 +166,7 @@ RETURNS TABLE(
     message TEXT,
     movement_id INTEGER,
     new_stock_level INTEGER
-) AS $
+) AS $$
 DECLARE
     v_movement_id INTEGER;
     v_new_stock INTEGER;
@@ -261,7 +261,7 @@ EXCEPTION
             NULL::INTEGER, 
             NULL::INTEGER;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- =============================================================================
 -- TRANSFER INVENTORY PROCEDURE
@@ -284,7 +284,7 @@ RETURNS TABLE(
     movement_in_id INTEGER,
     from_stock_level INTEGER,
     to_stock_level INTEGER
-) AS $
+) AS $$
 DECLARE
     v_movement_out_id INTEGER;
     v_movement_in_id INTEGER;
@@ -422,7 +422,7 @@ EXCEPTION
             NULL::INTEGER,
             NULL::INTEGER;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- =============================================================================
 -- ADJUST INVENTORY PROCEDURE
@@ -441,7 +441,7 @@ RETURNS TABLE(
     message TEXT,
     movement_id INTEGER,
     new_stock_level INTEGER
-) AS $
+) AS $$
 DECLARE
     v_movement_id INTEGER;
     v_new_stock INTEGER;
@@ -547,7 +547,7 @@ EXCEPTION
             NULL::INTEGER, 
             NULL::INTEGER;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- =============================================================================
 -- COMMENTS FOR DOCUMENTATION
