@@ -131,6 +131,30 @@ import { Location } from '../../../../core/models/inventory';
             }
           </div>
 
+          <!-- Wholesale Price -->
+          <div>
+            <label for="wholesale_price" class="block text-sm font-medium text-gray-700 mb-1">
+              Wholesale Price
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm pointer-events-none">$</span>
+              <input
+                id="wholesale_price"
+                type="number"
+                formControlName="wholesale_price"
+                min="0"
+                step="0.01"
+                class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                [class.border-red-400]="isInvalid('wholesale_price')"
+                placeholder="0.00"
+              />
+            </div>
+            @if (isInvalid('wholesale_price')) {
+              <p class="mt-1 text-xs text-red-600" role="alert">Wholesale price must be 0 or greater.</p>
+            }
+            <p class="mt-1 text-xs text-gray-400">Optional — charged to wholesale customers. Falls back to Price if blank.</p>
+          </div>
+
           <!-- Description -->
           <div>
             <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
@@ -273,6 +297,7 @@ export class ProductFormComponent implements OnInit {
     name: ['', [Validators.required]],
     unit_of_measure: ['each', [Validators.required]],
     price: [null as number | null, [Validators.required, Validators.min(0)]],
+    wholesale_price: [null as number | null, [Validators.min(0)]],
     description: [''],
     category_id: [null as number | null],
     initial_quantity: [null as number | null, [Validators.min(0)]],
@@ -353,6 +378,7 @@ export class ProductFormComponent implements OnInit {
           name: product.name,
           unit_of_measure: product.unit_of_measure ?? 'each',
           price: product.price ?? null,
+          wholesale_price: product.wholesale_price ?? null,
           description: product.description ?? '',
           category_id: product.category_id ?? null,
         });
@@ -383,6 +409,7 @@ export class ProductFormComponent implements OnInit {
       name: raw.name!.trim(),
       unit_of_measure: raw.unit_of_measure!.trim(),
       selling_price: raw.price!,
+      wholesale_price: raw.wholesale_price ?? undefined,
       description: raw.description?.trim() || undefined,
       category_id: raw.category_id ?? undefined,
     };

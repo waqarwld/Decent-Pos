@@ -9,6 +9,7 @@ type CreateProductRequest struct {
 	WeightKg          *float64 `json:"weight_kg" validate:"omitempty,min=0"`
 	CostPrice         *float64 `json:"cost_price" validate:"omitempty,min=0"`
 	SellingPrice      *float64 `json:"selling_price" validate:"omitempty,min=0"`
+	WholesalePrice    *float64 `json:"wholesale_price" validate:"omitempty,min=0"`
 	Status            string   `json:"status" validate:"omitempty,oneof=active discontinued pending"`
 	InitialQuantity   *int     `json:"initial_quantity" validate:"omitempty,min=0"`
 	InitialLocationID *int     `json:"initial_location_id" validate:"omitempty,min=1"`
@@ -22,6 +23,7 @@ type UpdateProductRequest struct {
 	WeightKg      *float64 `json:"weight_kg" validate:"omitempty,min=0"`
 	CostPrice     *float64 `json:"cost_price" validate:"omitempty,min=0"`
 	SellingPrice  *float64 `json:"selling_price" validate:"omitempty,min=0"`
+	WholesalePrice *float64 `json:"wholesale_price" validate:"omitempty,min=0"`
 	Status        *string  `json:"status" validate:"omitempty,oneof=active discontinued pending"`
 }
 
@@ -73,6 +75,43 @@ type UpdateSupplierRequest struct {
 	Phone         *string `json:"phone"`
 	PaymentTerms  *string `json:"payment_terms"`
 	IsActive      *bool   `json:"is_active"`
+}
+
+type CreateCustomerRequest struct {
+	Code         string  `json:"code"`
+	Name         string  `json:"name" validate:"required,min=1,max=200"`
+	Email        *string `json:"email" validate:"omitempty,email"`
+	Phone        *string `json:"phone"`
+	Address      *string `json:"address"`
+	CustomerType string  `json:"customer_type" validate:"omitempty,oneof=wholesale retail"`
+	IsActive     *bool   `json:"is_active"`
+}
+
+type UpdateCustomerRequest struct {
+	Name         *string `json:"name" validate:"omitempty,min=1,max=200"`
+	Email        *string `json:"email" validate:"omitempty,email"`
+	Phone        *string `json:"phone"`
+	Address      *string `json:"address"`
+	CustomerType *string `json:"customer_type" validate:"omitempty,oneof=wholesale retail"`
+	IsActive     *bool   `json:"is_active"`
+}
+
+type SaleItemRequest struct {
+	ProductID int `json:"product_id" validate:"required,min=1"`
+	Quantity  int `json:"quantity" validate:"required,min=1"`
+}
+
+type CreateSaleRequest struct {
+	CustomerID    *int              `json:"customer_id" validate:"omitempty,min=1"`
+	LocationID    int               `json:"location_id" validate:"required,min=1"`
+	PaymentMethod string            `json:"payment_method" validate:"required,oneof=cash card split other"`
+	Items         []SaleItemRequest `json:"items" validate:"required,min=1,dive"`
+}
+
+type CreateReturnRequest struct {
+	SaleItemID int     `json:"sale_item_id" validate:"required,min=1"`
+	Quantity   int     `json:"quantity" validate:"required,min=1"`
+	Reason     *string `json:"reason"`
 }
 
 type ReceiveRequest struct {

@@ -1,12 +1,13 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, forkJoin, map, throwError } from 'rxjs';
+import { Observable, catchError, map, throwError } from 'rxjs';
 import { Product } from '../models/product';
 import { TransactionItem } from '../models/transaction';
-import { InventoryService } from './inventory.service';
+import { CheckoutRequest, Customer, Sale } from '../models/customer';
+import { SaleService } from './sale.service';
 
 @Injectable({ providedIn: 'root' })
 export class TransactionService {
-  private readonly inventoryService = inject(InventoryService);
+  private readonly saleService = inject(SaleService);
 
   /** Writable signal holding the current list of transaction items */
   private readonly _items = signal<TransactionItem[]>([]);
@@ -14,9 +15,15 @@ export class TransactionService {
   /** Read-only view of the items signal */
   readonly items = this._items.asReadonly();
 
-  /** Computed running total: sum of (price × quantity) for all items */
+  /** The customer the current transaction is being sold to (null = walk-in) */
+  private readonly _customer = signal<Customer | null>(null);
+
+  /** Read-only view of the selected customer */
+  readonly customer = this._customer.asReadonly();
+
+  /** Computed running total, applying the wholesale price for wholesale customers */
   readonly total = computed(() =>
-    this._items().reduce((sum, item) => sum + (item.product.price ?? 0) * item.quantity, 0)
+    this._items().reduce((sum, item) => sum + this.unitPrice(item) * item.quantity, 0)
   );
 
   /** Signal that surfaces the last submission error, or null when no error */
@@ -24,6 +31,20 @@ export class TransactionService {
 
   /** Read-only view of the error signal */
   readonly error = this._error.asReadonly();
+
+  /** Price charged for a line, based on the selected customer's type */
+  private unitPrice(item: TransactionItem): number {
+    const customer = this._customer();
+    if (customer?.customer_type === 'wholesale' && item.product.wholesale_price != null) {
+      return item.product.wholesale_price;
+    }
+    return item.product.price ?? 0;
+  }
+
+  /** Attach a customer to the current transaction (null = walk-in, no account). */
+  setCustomer(customer: Customer | null): void {
+    this._customer.set(customer);
+  }
 
   /**
    * Adds a product to the transaction with quantity 1.
@@ -78,39 +99,32 @@ export class TransactionService {
   }
 
   /**
-   * Submits the current transaction by POSTing a ship request for each line item.
-   * On success: clears the transaction items and resets the error signal.
-   * On any error: preserves the current items and surfaces the error via the error signal.
+   * Submits the transaction as a single sale: records the sale (with the selected
+   * customer and payment method), charges wholesale/retail price, and decrements
+   * stock on the backend. On success clears the transaction items and error.
    *
-   * @param locationId - The location ID to ship from
-   * @returns Observable that completes on success or errors on failure
+   * @param opts.locationId - The location the sale happens at
+   * @param opts.paymentMethod - cash | card | split | other
    */
-  submit(locationId: number): Observable<unknown[]> {
+  submit(opts: { locationId: number; paymentMethod: string }): Observable<Sale> {
     const items = this._items();
 
     if (items.length === 0) {
       return throwError(() => new Error('No items in transaction'));
     }
 
-    const requests = items.map((item) =>
-      this.inventoryService.ship({
-        product_id: item.product.id,
-        location_id: locationId,
-        quantity: item.quantity,
-      })
-    );
+    const req: CheckoutRequest = {
+      customer_id: this._customer()?.id,
+      location_id: opts.locationId,
+      payment_method: opts.paymentMethod,
+      items: items.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
+    };
 
-    return forkJoin(requests).pipe(
-      map((results) => {
-        const failures = results.filter((r) => !r.success);
-        if (failures.length > 0) {
-          const msg = failures.map((f) => f.message).join('; ');
-          this._error.set(msg);
-          throw new Error(msg);
-        }
+    return this.saleService.checkout(req).pipe(
+      map((sale) => {
         this._error.set(null);
         this._items.set([]);
-        return results;
+        return sale;
       }),
       catchError((err) => {
         const message: string =
@@ -122,11 +136,12 @@ export class TransactionService {
   }
 
   /**
-   * Resets the transaction to an empty state and clears any error.
+   * Resets the transaction to an empty state and clears any error and customer.
    * Should be called after a successful submission.
    */
   clear(): void {
     this._items.set([]);
     this._error.set(null);
+    this._customer.set(null);
   }
 }

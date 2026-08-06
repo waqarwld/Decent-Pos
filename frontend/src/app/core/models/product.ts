@@ -21,9 +21,11 @@ export interface Product {
   name: string;
   description?: string;
   price?: number;
+  wholesale_price?: number;
   unit_of_measure?: string;
   category_id?: number;
   category?: Category;
+  status?: string;
   stock?: StockInfo[];
   created_at: string;
   updated_at: string;
@@ -36,6 +38,7 @@ export interface ProductCreateRequest {
   unit_of_measure: string;
   cost_price?: number;
   selling_price?: number;
+  wholesale_price?: number;
   category_id?: number;
   status?: string;
   weight_kg?: number;
@@ -50,6 +53,7 @@ export interface ProductUpdateRequest {
   unit_of_measure?: string;
   cost_price?: number;
   selling_price?: number;
+  wholesale_price?: number;
   category_id?: number;
   status?: string;
   weight_kg?: number;

@@ -100,6 +100,28 @@ export const routes: Routes = [
           import('./features/admin/suppliers/supplier-form/supplier-form.component').then(m => m.SupplierFormComponent),
       },
 
+      // Customers
+      {
+        path: 'customers',
+        loadComponent: () =>
+          import('./features/admin/customers/customer-list/customer-list.component').then(m => m.CustomerListComponent),
+      },
+      {
+        path: 'customers/new',
+        loadComponent: () =>
+          import('./features/admin/customers/customer-form/customer-form.component').then(m => m.CustomerFormComponent),
+      },
+      {
+        path: 'customers/:id/edit',
+        loadComponent: () =>
+          import('./features/admin/customers/customer-form/customer-form.component').then(m => m.CustomerFormComponent),
+      },
+      {
+        path: 'customers/:id/history',
+        loadComponent: () =>
+          import('./features/admin/customers/customer-detail/customer-detail.component').then(m => m.CustomerDetailComponent),
+      },
+
       // Inventory
       {
         path: 'inventory',

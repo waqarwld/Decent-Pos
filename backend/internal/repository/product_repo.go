@@ -34,7 +34,7 @@ func NewProductRepository(db *pgxpool.Pool) ProductRepository {
 // List returns a paginated slice of products matching the filter, plus the total count.
 func (r *productRepo) List(ctx context.Context, f models.ProductFilter) ([]models.Product, int, error) {
 	base := `SELECT product_id, sku, name, description, category_id, unit_of_measure,
-	                weight_kg, cost_price, selling_price, status, created_at, updated_at
+	                weight_kg, cost_price, selling_price, wholesale_price, status, created_at, updated_at
 	         FROM products`
 
 	args := []any{}
@@ -87,7 +87,7 @@ func (r *productRepo) List(ctx context.Context, f models.ProductFilter) ([]model
 		var p models.Product
 		if err := rows.Scan(
 			&p.ProductID, &p.SKU, &p.Name, &p.Description, &p.CategoryID,
-			&p.UnitOfMeasure, &p.WeightKg, &p.CostPrice, &p.SellingPrice,
+			&p.UnitOfMeasure, &p.WeightKg, &p.CostPrice, &p.SellingPrice, &p.WholesalePrice,
 			&p.Status, &p.CreatedAt, &p.UpdatedAt,
 		); err != nil {
 			return nil, 0, fmt.Errorf("product list scan: %w", err)
@@ -104,13 +104,13 @@ func (r *productRepo) List(ctx context.Context, f models.ProductFilter) ([]model
 // GetByID returns the product with the given ID, or ErrNotFound if none exists.
 func (r *productRepo) GetByID(ctx context.Context, id int) (*models.Product, error) {
 	query := `SELECT product_id, sku, name, description, category_id, unit_of_measure,
-	                 weight_kg, cost_price, selling_price, status, created_at, updated_at
+	                 weight_kg, cost_price, selling_price, wholesale_price, status, created_at, updated_at
 	          FROM products WHERE product_id = $1`
 
 	var p models.Product
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&p.ProductID, &p.SKU, &p.Name, &p.Description, &p.CategoryID,
-		&p.UnitOfMeasure, &p.WeightKg, &p.CostPrice, &p.SellingPrice,
+		&p.UnitOfMeasure, &p.WeightKg, &p.CostPrice, &p.SellingPrice, &p.WholesalePrice,
 		&p.Status, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
@@ -125,13 +125,13 @@ func (r *productRepo) GetByID(ctx context.Context, id int) (*models.Product, err
 // GetBySKU returns the product with the given SKU, or ErrNotFound if none exists.
 func (r *productRepo) GetBySKU(ctx context.Context, sku string) (*models.Product, error) {
 	query := `SELECT product_id, sku, name, description, category_id, unit_of_measure,
-	                 weight_kg, cost_price, selling_price, status, created_at, updated_at
+	                 weight_kg, cost_price, selling_price, wholesale_price, status, created_at, updated_at
 	          FROM products WHERE sku = $1`
 
 	var p models.Product
 	err := r.db.QueryRow(ctx, query, sku).Scan(
 		&p.ProductID, &p.SKU, &p.Name, &p.Description, &p.CategoryID,
-		&p.UnitOfMeasure, &p.WeightKg, &p.CostPrice, &p.SellingPrice,
+		&p.UnitOfMeasure, &p.WeightKg, &p.CostPrice, &p.SellingPrice, &p.WholesalePrice,
 		&p.Status, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
@@ -152,18 +152,18 @@ func (r *productRepo) Create(ctx context.Context, req models.CreateProductReques
 	}
 
 	query := `INSERT INTO products (sku, name, description, category_id, unit_of_measure,
-	                                weight_kg, cost_price, selling_price, status)
-	          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	                                weight_kg, cost_price, selling_price, wholesale_price, status)
+	          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	          RETURNING product_id, sku, name, description, category_id, unit_of_measure,
-	                    weight_kg, cost_price, selling_price, status, created_at, updated_at`
+	                    weight_kg, cost_price, selling_price, wholesale_price, status, created_at, updated_at`
 
 	var p models.Product
 	err := r.db.QueryRow(ctx, query,
 		req.SKU, req.Name, req.Description, req.CategoryID, req.UnitOfMeasure,
-		req.WeightKg, req.CostPrice, req.SellingPrice, status,
+		req.WeightKg, req.CostPrice, req.SellingPrice, req.WholesalePrice, status,
 	).Scan(
 		&p.ProductID, &p.SKU, &p.Name, &p.Description, &p.CategoryID,
-		&p.UnitOfMeasure, &p.WeightKg, &p.CostPrice, &p.SellingPrice,
+		&p.UnitOfMeasure, &p.WeightKg, &p.CostPrice, &p.SellingPrice, &p.WholesalePrice,
 		&p.Status, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
@@ -217,6 +217,11 @@ func (r *productRepo) Update(ctx context.Context, id int, req models.UpdateProdu
 		args = append(args, *req.SellingPrice)
 		argIdx++
 	}
+	if req.WholesalePrice != nil {
+		setClauses = append(setClauses, fmt.Sprintf("wholesale_price = $%d", argIdx))
+		args = append(args, *req.WholesalePrice)
+		argIdx++
+	}
 	if req.Status != nil {
 		setClauses = append(setClauses, fmt.Sprintf("status = $%d", argIdx))
 		args = append(args, *req.Status)
@@ -239,14 +244,14 @@ func (r *productRepo) Update(ctx context.Context, id int, req models.UpdateProdu
 	query := fmt.Sprintf(`UPDATE products SET %s, updated_at = NOW()
 	                      WHERE product_id = $%d
 	                      RETURNING product_id, sku, name, description, category_id, unit_of_measure,
-	                                weight_kg, cost_price, selling_price, status, created_at, updated_at`,
+	                                weight_kg, cost_price, selling_price, wholesale_price, status, created_at, updated_at`,
 		setStr, argIdx)
 	args = append(args, id)
 
 	var p models.Product
 	err := r.db.QueryRow(ctx, query, args...).Scan(
 		&p.ProductID, &p.SKU, &p.Name, &p.Description, &p.CategoryID,
-		&p.UnitOfMeasure, &p.WeightKg, &p.CostPrice, &p.SellingPrice,
+		&p.UnitOfMeasure, &p.WeightKg, &p.CostPrice, &p.SellingPrice, &p.WholesalePrice,
 		&p.Status, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {

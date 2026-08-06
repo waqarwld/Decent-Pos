@@ -12,6 +12,7 @@ type Product struct {
 	WeightKg      *float64  `json:"weight_kg,omitempty"`
 	CostPrice     *float64  `json:"cost_price,omitempty"`
 	SellingPrice  *float64  `json:"price,omitempty"`
+	WholesalePrice *float64 `json:"wholesale_price,omitempty"`
 	Status        string    `json:"status"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
@@ -47,6 +48,60 @@ type Supplier struct {
 	PaymentTerms  *string   `json:"payment_terms,omitempty"`
 	IsActive      bool      `json:"is_active"`
 	CreatedAt     time.Time `json:"created_at"`
+}
+
+type Customer struct {
+	CustomerID   int       `json:"id"`
+	Code         string    `json:"code"`
+	Name         string    `json:"name"`
+	Email        *string   `json:"email,omitempty"`
+	Phone        *string   `json:"phone,omitempty"`
+	Address      *string   `json:"address,omitempty"`
+	CustomerType string    `json:"customer_type"`
+	IsActive     bool      `json:"is_active"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type Sale struct {
+	SaleID        int        `json:"id"`
+	SaleNumber    string     `json:"sale_number"`
+	CustomerID    *int       `json:"customer_id,omitempty"`
+	CustomerName  *string    `json:"customer_name,omitempty"`
+	LocationID    int        `json:"location_id"`
+	Subtotal      float64    `json:"subtotal"`
+	Discount      float64    `json:"discount"`
+	Total         float64    `json:"total"`
+	PaymentMethod string     `json:"payment_method"`
+	Status        string     `json:"status"`
+	CreatedBy     string     `json:"created_by"`
+	CreatedAt     time.Time  `json:"created_at"`
+	Items         []SaleItem `json:"items,omitempty"`
+}
+
+type SaleItem struct {
+	SaleItemID  int      `json:"id"`
+	SaleID      int      `json:"sale_id"`
+	ProductID   int      `json:"product_id"`
+	SKU         *string  `json:"sku,omitempty"`
+	ProductName *string  `json:"product_name,omitempty"`
+	Quantity    int      `json:"quantity"`
+	UnitPrice   float64  `json:"unit_price"`
+	LineTotal   float64  `json:"line_total"`
+	ReturnedQty int      `json:"returned_qty"`
+}
+
+type Return struct {
+	ReturnID     int       `json:"id"`
+	SaleID       int       `json:"sale_id"`
+	SaleItemID   int       `json:"sale_item_id"`
+	ProductID    int       `json:"product_id"`
+	CustomerID   *int      `json:"customer_id,omitempty"`
+	Quantity     int       `json:"quantity"`
+	RefundAmount float64   `json:"refund_amount"`
+	Reason       *string   `json:"reason,omitempty"`
+	CreatedBy    string    `json:"created_by"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type Movement struct {
